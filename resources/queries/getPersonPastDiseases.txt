@@ -1,0 +1,12 @@
+prefix cdata: <http://www.clinicaldb.org/clinicaldata_>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix doidc: <http://purl.obolibrary.org/obo/DOID_>
+select distinct ?name
+where {
+   ?puri cdata:SufferedFrom ?dis .
+   ?dis rdfs:label ?name
+   minus {
+      ?puri cdata:SufferedFrom ?dis .
+      ?dis rdfs:subClassOf doidc:1205
+   }
+}

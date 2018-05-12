@@ -1,0 +1,20 @@
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix gdrug: <http://clinicaldb/dron>
+prefix dron: <http://purl.obolibrary.org/obo/DRON_>
+prefix bfo: <http://purl.obolibrary.org/obo/BFO_00000>
+
+select ?category ?catName
+from named gdrug:
+where {
+   graph gdrug: {
+      ?category rdfs:subClassOf* bfo:30 .
+      ?category rdfs:label ?catName
+      FILTER regex(?category, "DRON")
+      FILTER regex(?catName, "drug") 
+      MINUS {
+        ?category rdfs:label "packaged drug product"@en .
+            }
+   }
+         
+}
+order by ?catName

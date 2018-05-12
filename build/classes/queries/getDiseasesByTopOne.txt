@@ -1,0 +1,12 @@
+prefix gdoid: <http://clinicaldb/doid>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+select distinct ?dis ?disName
+from named gdoid:
+where {
+  graph gdoid: {
+   ?topDis rdfs:label ?topDisName .    
+   ?dis rdfs:subClassOf ?topDis .
+   ?dis rdfs:label ?disName
+  }
+}
+order by ?disName

@@ -1,0 +1,32 @@
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix doidp: <http://purl.obolibrary.org/obo/DOID#>
+prefix gdoid: <http://clinicaldb/doid>
+prefix gsymp: <http://clinicaldb/symp>
+prefix gdoidsymp: <http://clinicaldb/doid/symp>
+
+select distinct ?name
+from named gsymp:
+from named gdoid:
+from named gdoidsymp:
+where {
+   {
+      graph gdoid: {
+         ?dis rdfs:subClassOf ?supDis . 
+      }
+      graph gdoidsymp: {
+         ?supDis doidp:has_symptom ?symp .
+      }
+      graph gsymp: {
+         ?symp rdfs:label ?name
+      }
+   }
+   union
+   {
+      graph gdoidsymp: {
+         ?dis doidp:has_symptom ?symp .
+      }
+      graph gsymp: {
+         ?symp rdfs:label ?name
+      }
+   }
+}

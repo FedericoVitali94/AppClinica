@@ -1,0 +1,14 @@
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix gsymp: <http://clinicaldb/symp>
+
+select ?symp ?sympName
+from named gsymp:
+where {
+   graph gsymp: {
+      ?symp rdfs:subClassOf ?topSymp .
+      ?topSymp rdfs:label ?l .
+      filter regex(?l, "^symptom$", "i") .
+      ?symp rdfs:label ?sympName
+   }
+}
+order by ?sympName

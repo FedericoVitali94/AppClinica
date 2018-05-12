@@ -1,0 +1,9 @@
+prefix cdata: <http://www.clinicaldb.org/clinicaldata_>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+select distinct ?givenName ?surname ?age ?bt
+where {
+   ?puri foaf:givenName ?givenName .
+   ?puri foaf:surname ?surname .
+   ?puri foaf:age ?age .
+   ?puri cdata:BloodType ?bt
+}
