@@ -1,0 +1,13 @@
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix gdrug: <http://clinicaldb/dron>
+prefix dron: <http://purl.obolibrary.org/obo/DRON_>
+prefix bfo: <http://purl.obolibrary.org/obo/BFO_>
+
+select distinct ?b ?name 
+from named gdrug:
+where {
+   graph gdrug: {
+      dron:00024050 bfo:0000053 ?b .
+      ?b rdfs:label ?name 
+                }
+}
