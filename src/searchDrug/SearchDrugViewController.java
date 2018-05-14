@@ -10,11 +10,13 @@ import com.marklogic.client.MarkLogicServerException;
 import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
+import drugDetails.drugDetailsViewController;
 import java.io.IOException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -23,6 +25,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.stage.Stage;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
@@ -142,6 +145,7 @@ public class SearchDrugViewController implements Initializable {
       }
       
       this.setColsSearchTable();
+      this.setDoubleClickHandler();
 /*
       //the specific disease combobox listen for changes in the primary combobox
       //selection and loads the diseases of the specified type
@@ -206,7 +210,7 @@ public class SearchDrugViewController implements Initializable {
     * *
     * *
     * Executes the input query and puts the results in the specified combobox.
-    * The result variable must be "disName".
+    * The result variable must be "drugName".
     *
     * @param query the query tu execute. Must be Select.
     * @param cb the combobox to populate.
@@ -248,5 +252,40 @@ public class SearchDrugViewController implements Initializable {
       );
       this.searchResults = FXCollections.observableArrayList();
       this.tvDrugs.setItems(this.searchResults);
+   }
+   
+   
+    /**
+    * *
+    * double click on table row opens a new window with details about the selected disease
+    * @param table
+    */
+   private void setDoubleClickHandler() {
+       this.tvDrugs.setRowFactory(tr -> {
+           TableRow<SearchDrugTableEntry> row = new TableRow<>();
+           row.setOnMouseClicked(event -> {
+               if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                   String drugName = row.getItem().getName();
+                   LOGGER.debug(drugName);
+                   //load disease detail window
+                   try {
+                       FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DRUG_DET_WIN));
+                       Parent view = (Parent) loader.load();
+                       //set the drug in the new window controller
+                       loader.<drugDetailsViewController>getController().setDrugAndInit(drugName);
+                       
+                       Scene scene = new Scene(view);
+                       Stage newStage = new Stage();
+                       newStage.setScene(scene);
+                       newStage.setTitle(drugName);
+                       newStage.show();
+                   } catch (IOException exc) {
+                       PopUps.showError("Errore", "Impossibile caricare la pagina");
+                       LOGGER.error(exc.getMessage());
+                   }
+               }
+           });
+           return row;
+       });
    }
 }
