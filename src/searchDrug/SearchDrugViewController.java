@@ -124,7 +124,9 @@ public class SearchDrugViewController implements Initializable {
          while (res.hasNext()) {
             QuerySolution sol = res.next();
             String name = sol.getLiteral("drugName").getString();
-            this.searchResults.add(new SearchDrugTableEntry(name));
+            String codDrug = sol.getResource("drug").getURI();
+            codDrug = codDrug.substring(codDrug.length() - 8, codDrug.length());
+            this.searchResults.add(new SearchDrugTableEntry(codDrug, name));
          }
       } finally {
          this.mldg.setRulesets();
@@ -146,65 +148,8 @@ public class SearchDrugViewController implements Initializable {
       
       this.setColsSearchTable();
       this.setDoubleClickHandler();
-/*
-      //the specific disease combobox listen for changes in the primary combobox
-      //selection and loads the diseases of the specified type
-      this.cbTopDrugs.getSelectionModel()
-              .selectedItemProperty().addListener((ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
-                 if (newValue == null || newValue.equals("") || newValue.equals("disease") || newValue.equals("--Nulla--")) {
-                    this.cbSpecDrugs.setDisable(true);
-                    return;
-                 }
 
-                 this.cbSpecDrugs.setDisable(false);
-                 String str = QueryUtils.loadQueryFromFile("getDiseasesByTopOne.txt");
-                 if (str != null) {
-                    //use subclass ruleset to get every sub disease of the selected one
-                    this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
-                    ParameterizedSparqlString query = new ParameterizedSparqlString();
-                    query.setCommandText(str);
-                    query.setLiteral("topDisName", newValue);
-
-                    this.loadValuesAndPopulateComboBox(query.asQuery().toString(), this.cbSpecDrugs);
-                 } else {
-                    PopUps.showError("Error", "Errore nel recupero della richiesta per le malattie");
-                 }
-
-                 //clean the ruleset
-                 this.mldg.setRulesets();
-                 LOGGER.debug(this.mldg.getRulesets().length);
-              });
-      */
-
-      /*
-      //set double click event on table row
-      this.table.setRowFactory(tr -> {
-         TableRow<SearchTableEntry> row = new TableRow<>();
-         row.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2 && (!row.isEmpty())) {
-               String personUri = row.getItem().getID();
-               //load detail window
-               try {
-                  FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.EHR_WIN));
-                  Parent view = (Parent) loader.load();
-                  //set the person in the new window controller
-                  loader.<EHRViewController>getController().setPersonAndInit(personUri);
-                  
-                  Scene scene = new Scene(view);
-                  Stage newStage = new Stage();
-                  newStage.setScene(scene);
-                  newStage.show();
-               } catch (IOException exc) {
-                  PopUps.showError("Errore", "Impossibile caricare la pagina");
-                  LOGGER.error(exc.getMessage());
-               }
-            }
-         });
-         return row;
-      });*/
    }
-
-   
 
    /**
     * *
@@ -247,6 +192,8 @@ public class SearchDrugViewController implements Initializable {
       nameCol.setCellValueFactory(cellData -> {
          return cellData.getValue().nameProperty();
       });
+      
+      
       this.tvDrugs.getColumns().addAll(
               nameCol
       );
@@ -266,13 +213,15 @@ public class SearchDrugViewController implements Initializable {
            row.setOnMouseClicked(event -> {
                if (event.getClickCount() == 2 && (!row.isEmpty())) {
                    String drugName = row.getItem().getName();
+                   String drugCod = row.getItem().getCod();
                    LOGGER.debug(drugName);
+                   LOGGER.debug(drugCod);
                    //load disease detail window
                    try {
                        FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DRUG_DET_WIN));
                        Parent view = (Parent) loader.load();
                        //set the drug in the new window controller
-                       loader.<drugDetailsViewController>getController().setDrugAndInit(drugName);
+                       loader.<drugDetailsViewController>getController().setDrugAndInit(drugCod, drugName);
                        
                        Scene scene = new Scene(view);
                        Stage newStage = new Stage();

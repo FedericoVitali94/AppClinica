@@ -40,7 +40,10 @@ public class drugDetailsViewController implements Initializable {
 
    @FXML
    private Label txtDrugName;
-   private Label txtBearerOf;
+   @FXML
+   private Label txtDrugFunction;
+   @FXML
+   private TextArea txtDrugFunctionDescription;
    @FXML
    private TableView<SimpleStringProperty> tvSubDrugs;
 
@@ -61,8 +64,13 @@ public class drugDetailsViewController implements Initializable {
       this.setCols("Dosaggio", this.obsLSubDrugs, this.tvSubDrugs);
    }
     
-    public void setDrugAndInit(final String drugName) {
+    public void setDrugAndInit(final String drugCod, final String drugName) {
       this.txtDrugName.setText(drugName);
+      LOGGER.debug(drugCod);
+      LOGGER.debug(drugName);
+      
+      setDrugFunction(drugCod);
+      
    }
     
     /**
@@ -83,5 +91,78 @@ public class drugDetailsViewController implements Initializable {
       table.getColumns().add(col);
       table.setItems(obList);
    }
+
+    private void setDrugFunction(final String drugCode){
+    String finalQuery = "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n"
+                        +"prefix gdrug: <http://clinicaldb/dron> \n"
+                        +"prefix dron: <http://purl.obolibrary.org/obo/DRON_> \n"
+                        +"prefix bfo: <http://purl.obolibrary.org/obo/BFO_> \n"
+                        +"select ?propertyCode (SAMPLE(?name) AS ?NAME) \n" 
+                        +"from named gdrug: \n"
+                        +"where { \n";
+      String whereClause = 
+                    "graph gdrug: { \n";
+      
+
+      if (!drugCode.isEmpty()) {
+          whereClause = whereClause.concat("dron:"+drugCode+" bfo:0000053 ?propertyCode .\n");
+      }
+      
+      finalQuery = finalQuery.concat(whereClause + "?propertyCode rdfs:label ?name \n" 
+                                                    +"} \n"
+                                                    +"} \n"
+                                                    +"group by ?propertyCode");
+      LOGGER.debug(finalQuery);
+      String propertyName = "";
+      String propertyCode = "";
+      //execute the query
+      this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
+      try (QueryExecution execution = QueryExecutionFactory.create(finalQuery, this.mldg.toDataset())) {
+         ResultSet res = execution.execSelect();
+
+         while (res.hasNext()) {
+            QuerySolution sol = res.next();
+            propertyName = sol.getLiteral("NAME").getString();
+            propertyCode = sol.getResource("propertyCode").getURI();
+            LOGGER.debug(propertyName);            
+         }
+      } finally {
+         this.mldg.setRulesets();
+         this.txtDrugFunction.setText(propertyName);
+      }
+      
+      
+      finalQuery = "prefix gdrug: <http://clinicaldb/dron> \n"
+                        +"prefix dron: <http://purl.obolibrary.org/obo/DRON_> \n"
+                        +"prefix obo: <http://purl.obolibrary.org/obo/IAO_> \n"
+                        +"select ?propertyDescription \n" 
+                        +"from named gdrug: \n"
+                        +"where { \n";
+      
+       whereClause = "graph gdrug: { \n";
+      if (!propertyCode.isEmpty()) {
+          whereClause = whereClause.concat("dron:"+propertyCode.substring(propertyCode.length()-8, propertyCode.length())+" obo:0000115 ?propertyDescription \n");
+      }
+      
+      finalQuery = finalQuery.concat(whereClause +"} \n"
+                                                 +"} ");
+      
+      LOGGER.debug(finalQuery);
+      this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
+      try (QueryExecution execution = QueryExecutionFactory.create(finalQuery, this.mldg.toDataset())) {
+         ResultSet res = execution.execSelect();
+
+         while (res.hasNext()) {
+            QuerySolution sol = res.next();
+            this.txtDrugFunctionDescription.setText(sol.getLiteral("propertyDescription").getString());
+         }
+      } finally {
+         this.mldg.setRulesets();
+      }
+
+
+    }
+
+
     
 }
