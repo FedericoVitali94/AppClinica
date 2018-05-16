@@ -22,11 +22,11 @@
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <Label fx:id="txtDrugFunction" layoutX="22.0" layoutY="75.0" prefHeight="17.0" prefWidth="272.0" text="Label">
+      <Label fx:id="txtProperty0" layoutX="22.0" layoutY="75.0" prefHeight="17.0" prefWidth="272.0" text="Label">
          <effect>
             <Blend mode="DARKEN" />
          </effect></Label>
-      <TextArea fx:id="txtDrugFunctionDescription" layoutX="22.0" layoutY="98.0" maxWidth="-Infinity" prefHeight="99.0" prefWidth="272.0" wrapText="true" />
+      <TextArea fx:id="txtProperty0Desc" layoutX="22.0" layoutY="98.0" maxWidth="-Infinity" prefHeight="99.0" prefWidth="272.0" wrapText="true" />
       <Label fx:id="txtProperty1" layoutX="22.0" layoutY="217.0" prefHeight="17.0" prefWidth="272.0" text="Label">
          <effect>
             <Blend mode="DARKEN" />

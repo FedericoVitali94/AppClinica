@@ -79,7 +79,6 @@ public class SearchDrugViewController implements Initializable {
               + "prefix gdrug: <http://clinicaldb/dron> \n"
               + "prefix dron: <http://purl.obolibrary.org/obo/DRON_> \n"
               + "select ?drug ?drugName \n" 
-              + "from named gdrug: \n"
               + "where { \n";
       String whereClause = 
                     "graph gdrug: { \n";
@@ -107,7 +106,7 @@ public class SearchDrugViewController implements Initializable {
       
       //if partial name is not empty add the filter to the query
       if (!partialName.isEmpty()) {
-         whereClause = whereClause.concat("filter regex(?drugName, \"" + partialName + "\", \"i\") . \n");
+         whereClause = whereClause.concat("FILTER NOT EXISTS { ?drug rdfs:subClassOf/rdfs:subClassOf+ ?drugName }"+"filter regex(?drugName, \"" + partialName + "\", \"i\") . \n");
       }
 
       finalQuery = finalQuery.concat(whereClause + " }\n" +
@@ -116,7 +115,7 @@ public class SearchDrugViewController implements Initializable {
       LOGGER.debug(finalQuery);
 
       //execute the query
-      this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
+      //this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
       try (QueryExecution execution = QueryExecutionFactory.create(finalQuery, this.mldg.toDataset())) {
          ResultSet res = execution.execSelect();
 

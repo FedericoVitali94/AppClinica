@@ -5,17 +5,13 @@
  */
 package drugDetails;
 
-import com.marklogic.client.MarkLogicServerException;
 import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
@@ -25,15 +21,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.cell.PropertyValueFactory;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.log4j.Logger;
 import searchDrug.SearchDrugTableEntry;
-import util.PopUps;
-import util.QueryUtils;
 
 
 /**
@@ -43,17 +36,18 @@ import util.QueryUtils;
 public class drugDetailsViewController implements Initializable {
     
     private final static Logger LOGGER = Logger.getLogger(drugDetailsViewController.class);
-
+    private boolean bearer_set;
+    
    @FXML
    private Label txtDrugName;
    @FXML
-   private Label txtDrugFunction;
+   private Label txtProperty0;
    @FXML
    private Label txtProperty1;
    @FXML
    private Label txtProperty2;
    @FXML
-   private TextArea txtDrugFunctionDescription;
+   private TextArea txtProperty0Desc;
    @FXML
    private TextArea txtProperty1Desc;
    @FXML 
@@ -63,7 +57,6 @@ public class drugDetailsViewController implements Initializable {
 
    private ObservableList<SearchDrugTableEntry> obsLSubDrugs;
    private MarkLogicDatasetGraph mldg;
-   private String disUri;
 
    /**
     * Initializes the controller class.
@@ -147,36 +140,42 @@ public class drugDetailsViewController implements Initializable {
          }
       } finally {
          this.mldg.setRulesets();
-         this.txtDrugFunction.setText(propertyName.toUpperCase());
       }
       
-      
-      finalQuery = "prefix gdrug: <http://clinicaldb/dron> \n"
-                        +"prefix dron: <http://purl.obolibrary.org/obo/DRON_> \n"
-                        +"prefix obo: <http://purl.obolibrary.org/obo/IAO_> \n"
-                        +"select ?propertyDescription \n" 
-                        +"from named gdrug: \n"
-                        +"where { \n";
-      
-       whereClause = "graph gdrug: { \n";
-      if (!propertyCode.isEmpty()) {
-          whereClause = whereClause.concat("dron:"+propertyCode.substring(propertyCode.length()-8, propertyCode.length())+" obo:0000115 ?propertyDescription \n");
-      }
-      
-      finalQuery = finalQuery.concat(whereClause +"} \n"
-                                                 +"} ");
-      
-      LOGGER.debug(finalQuery);
-      this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
-      try (QueryExecution execution = QueryExecutionFactory.create(finalQuery, this.mldg.toDataset())) {
-         ResultSet res = execution.execSelect();
+      if(!propertyCode.isEmpty()){
+          this.txtProperty0.setText(propertyName.toUpperCase());
+        finalQuery = "prefix gdrug: <http://clinicaldb/dron> \n"
+                          +"prefix dron: <http://purl.obolibrary.org/obo/DRON_> \n"
+                          +"prefix obo: <http://purl.obolibrary.org/obo/IAO_> \n"
+                          +"select ?propertyDescription \n" 
+                          +"from named gdrug: \n"
+                          +"where { \n";
 
-         while (res.hasNext()) {
-            QuerySolution sol = res.next();
-            this.txtDrugFunctionDescription.setText(sol.getLiteral("propertyDescription").getString());
-         }
-      } finally {
-         this.mldg.setRulesets();
+         whereClause = "graph gdrug: { \n";
+        if (!propertyCode.isEmpty()) {
+            whereClause = whereClause.concat("dron:"+propertyCode.substring(propertyCode.length()-8, propertyCode.length())+" obo:0000115 ?propertyDescription \n");
+        }
+
+        finalQuery = finalQuery.concat(whereClause +"} \n"
+                                                   +"} ");
+
+        LOGGER.debug(finalQuery);
+        this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
+        try (QueryExecution execution = QueryExecutionFactory.create(finalQuery, this.mldg.toDataset())) {
+           ResultSet res = execution.execSelect();
+
+           while (res.hasNext()) {
+              QuerySolution sol = res.next();
+              this.txtProperty0Desc.setText(sol.getLiteral("propertyDescription").getString());
+              bearer_set = true;
+           }
+        } finally {
+           this.mldg.setRulesets();
+        }
+      }
+      else{
+          //se non c'è is_bearer_of
+          bearer_set = false;
       }
 
 
@@ -231,16 +230,33 @@ public class drugDetailsViewController implements Initializable {
               
             LOGGER.debug(key);
             LOGGER.debug(mapResult.get(key));
-            if(i==0){
-                this.txtProperty1.setText(mapResult.get(key).toUpperCase());
+            if(!bearer_set){
+                if(i==0){
+                    this.txtProperty0.setText(mapResult.get(key).toUpperCase());
+                }
+                else if(i==1){
+                    this.txtProperty1.setText(mapResult.get(key).toUpperCase());
+                }else{
+                    this.txtProperty2.setText(mapResult.get(key).toUpperCase());
+                }
             }
             else{
-                this.txtProperty2.setText(mapResult.get(key).toUpperCase());
+                if(i==0){
+                    this.txtProperty1.setText(mapResult.get(key).toUpperCase());
+                }
+                else if(i==1){
+                    this.txtProperty2.setText(mapResult.get(key).toUpperCase());
+                }
             }
+            setPropertyDescription(key, i);
             i++;
+            
+            if(mapResult.size() < 3){
+                this.txtProperty2.setVisible(false);
+                this.txtProperty2Desc.setVisible(false);
+            }
         }
         
-        setPropertyDescription(mapResult);
       }
       else{
           this.txtProperty1.setVisible(false);
@@ -251,11 +267,8 @@ public class drugDetailsViewController implements Initializable {
       
     }
     
-    private void setPropertyDescription(Map<String,String> properties){
-        int i=0;
-        List<String> list = new ArrayList<>();
-        for(String key : properties.keySet()){
-            LOGGER.debug(key);
+    private void setPropertyDescription(String key, int i){
+        LOGGER.debug(key);
             String finalQuery = "prefix library: <http://purl.obolibrary.org/obo/>\n" +
                                 "prefix iao: <http://purl.obolibrary.org/obo/IAO_> \n"
                                 +"prefix gdrug: <http://clinicaldb/dron> \n"
@@ -281,23 +294,31 @@ public class drugDetailsViewController implements Initializable {
 
                while (res.hasNext()) {
                   QuerySolution sol = res.next();
-                  list.add(sol.getLiteral("desc").getString());          
+                  if(!bearer_set){
+                      if(i==0){
+                        this.txtProperty0Desc.setText(sol.getLiteral("desc").getString());
+                    }
+                    else if(i==1){
+                        this.txtProperty1Desc.setText(sol.getLiteral("desc").getString());
+                    }else{
+                        this.txtProperty2Desc.setText(sol.getLiteral("desc").getString());
+                    }
+                  }else{
+                      if(i==0){
+                        this.txtProperty1Desc.setText(sol.getLiteral("desc").getString());
+                    }
+                    else if(i==1){
+                        this.txtProperty2Desc.setText(sol.getLiteral("desc").getString());
+                    }
+                  }
+                    
+                    i++;      
                }
                LOGGER.debug(res);
             } finally {
                this.mldg.setRulesets();
             }
             
-            if(i==0){
-            this.txtProperty1Desc.setText(list.get(0));
-            }
-            else{
-                this.txtProperty2Desc.setText(list.get(1));
-            }
-            i++;
-            
-        }
-        
     }
     
     
