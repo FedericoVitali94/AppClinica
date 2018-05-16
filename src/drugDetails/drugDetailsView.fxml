@@ -22,10 +22,22 @@
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <Label fx:id="txtDrugFunction" layoutX="14.0" layoutY="76.0" prefHeight="17.0" prefWidth="283.0" text="Label">
+      <Label fx:id="txtDrugFunction" layoutX="22.0" layoutY="75.0" prefHeight="17.0" prefWidth="272.0" text="Label">
          <effect>
             <Blend mode="DARKEN" />
          </effect></Label>
-      <TextArea fx:id="txtDrugFunctionDescription" layoutX="22.0" layoutY="98.0" maxWidth="-Infinity" prefHeight="112.0" prefWidth="272.0" wrapText="true" />
+      <TextArea fx:id="txtDrugFunctionDescription" layoutX="22.0" layoutY="98.0" maxWidth="-Infinity" prefHeight="99.0" prefWidth="272.0" wrapText="true" />
+      <Label fx:id="txtProperty1" layoutX="22.0" layoutY="217.0" prefHeight="17.0" prefWidth="272.0" text="Label">
+         <effect>
+            <Blend mode="DARKEN" />
+         </effect>
+      </Label>
+      <TextArea fx:id="txtProperty1Desc" layoutX="22.0" layoutY="234.0" maxWidth="-Infinity" prefHeight="99.0" prefWidth="272.0" wrapText="true" />
+      <Label fx:id="txtProperty2" layoutX="22.0" layoutY="351.0" prefHeight="17.0" prefWidth="272.0" text="Label">
+         <effect>
+            <Blend mode="DARKEN" />
+         </effect>
+      </Label>
+      <TextArea fx:id="txtProperty2Desc" layoutX="22.0" layoutY="372.0" maxWidth="-Infinity" prefHeight="139.0" prefWidth="272.0" wrapText="true" />
    </children>
 </AnchorPane>
