@@ -5,18 +5,17 @@
  */
 package searchDrug;
 
-import ehr.EHRViewController;
 import com.marklogic.client.MarkLogicServerException;
-import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
 import drugDetails.drugDetailsViewController;
 import java.io.IOException;
 import java.net.URL;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.ResourceBundle;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -57,6 +56,7 @@ public class SearchDrugViewController implements Initializable {
    private TableView<SearchDrugTableEntry> tvDrugs = new TableView<>();
 
    private MarkLogicDatasetGraph mldg;
+   private Map<String, String> drugTypeList;
    private ObservableList<SearchDrugTableEntry> searchResults;
    private String categoryCode = "";
 
@@ -99,7 +99,11 @@ public class SearchDrugViewController implements Initializable {
       LOGGER.debug("dis: " + selectedDrugsCategory);
 
       if (!selectedDrugsCategory.isEmpty()) {
-          categoryCode = selectedDrugsCategory.substring(4, 6);
+          for (Entry<String, String> entry : this.drugTypeList.entrySet()) {
+                if (Objects.equals(selectedDrugsCategory, entry.getValue())) {
+                    categoryCode = entry.getKey();
+                }
+            }
           whereClause = whereClause.concat("?drug rdfs:subClassOf dron:000000"+categoryCode+" . \n"
                   + "?drug rdfs:label ?drugName \n");
       }
@@ -160,6 +164,7 @@ public class SearchDrugViewController implements Initializable {
     * @param cb the combobox to populate.
     */
    private void loadValuesAndPopulateComboBox(String query, ComboBox<String> cb) {
+       this.drugTypeList = new HashMap<String,String>();
       try (QueryExecution execution = QueryExecutionFactory.create(query, this.mldg.toDataset())) {
          ObservableList<String> disList = FXCollections.observableArrayList();
          ResultSet res = execution.execSelect();
@@ -168,9 +173,11 @@ public class SearchDrugViewController implements Initializable {
             String catName = sol.getLiteral("catName").getString();
             String catCode = sol.getResource("category").getURI();
             categoryCode = catCode.substring(catCode.length() - 2, catCode.length());
-            disList.add("ID: "+categoryCode + " - " +catName);
+            this.drugTypeList.put(categoryCode, catName);
          }
-         disList.add(0, "Seleziona categoria ..");
+         for(String k : this.drugTypeList.keySet()){
+             disList.add(this.drugTypeList.get(k));
+         }
          cb.setItems(disList);
          cb.getSelectionModel().select(0);
       } catch (MarkLogicServerException exc) {
