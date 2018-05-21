@@ -10,6 +10,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -28,7 +29,7 @@ public class LogInViewController implements Initializable {
    @FXML
    private Button butLog;
    @FXML
-   private TextField tfPass;
+   private PasswordField tfPass;
    @FXML
    private TextField tfUser;
 
