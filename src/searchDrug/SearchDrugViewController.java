@@ -6,6 +6,7 @@
 package searchDrug;
 
 import com.marklogic.client.MarkLogicServerException;
+import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
 import drugDetails.drugDetailsViewController;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.ResourceBundle;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -30,6 +32,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QuerySolution;
@@ -75,65 +78,13 @@ public class SearchDrugViewController implements Initializable {
    @FXML
    private void handleSearchBut(ActionEvent event) {
       
-      String finalQuery = "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n"
-              + "prefix gdrug: <http://clinicaldb/dron> \n"
-              + "prefix dron: <http://purl.obolibrary.org/obo/DRON_> \n"
-              + "select ?drug ?drugName \n" 
-              + "where { \n";
-      String whereClause = 
-                    "graph gdrug: { \n";
-        
-      //partial name to seach
-      String partialName = this.tfDrugName.getText();
-
-      //drug category to search
-      String selectedDrugsCategory = "";
-        if (!this.cbTopDrugsCategory.getSelectionModel().getSelectedItem().equals("--Nulla--")) {
-           selectedDrugsCategory = this.cbTopDrugsCategory.getSelectionModel().getSelectedItem();
-        } else {
-         LOGGER.debug("nessuna selezione nella combo box");
-        }
-
-      LOGGER.debug("building search query...");
-      LOGGER.debug("nome: " + partialName);
-      LOGGER.debug("dis: " + selectedDrugsCategory);
-
-      if (!selectedDrugsCategory.isEmpty()) {
-          for (Entry<String, String> entry : this.drugTypeList.entrySet()) {
+        String selectedDrugsCategory = this.cbTopDrugsCategory.getSelectionModel().getSelectedItem();
+        for (Entry<String, String> entry : this.drugTypeList.entrySet()) {
                 if (Objects.equals(selectedDrugsCategory, entry.getValue())) {
                     categoryCode = entry.getKey();
                 }
             }
-          whereClause = whereClause.concat("?drug rdfs:subClassOf dron:000000"+categoryCode+" . \n"
-                  + "?drug rdfs:label ?drugName \n");
-      }
-      
-      //if partial name is not empty add the filter to the query
-      if (!partialName.isEmpty()) {
-         whereClause = whereClause.concat("FILTER NOT EXISTS { ?drug rdfs:subClassOf/rdfs:subClassOf+ ?drugName }"+"filter regex(?drugName, \"" + partialName + "\", \"i\") . \n");
-      }
-
-      finalQuery = finalQuery.concat(whereClause + " }\n" +
-                                                "}\n" +
-                                                "order by ?drugName ");
-      LOGGER.debug(finalQuery);
-
-      //execute the query
-      //this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
-      try (QueryExecution execution = QueryExecutionFactory.create(finalQuery, this.mldg.toDataset())) {
-         ResultSet res = execution.execSelect();
-
-         this.searchResults.clear();
-         while (res.hasNext()) {
-            QuerySolution sol = res.next();
-            String name = sol.getLiteral("drugName").getString();
-            String codDrug = sol.getResource("drug").getURI();
-            codDrug = codDrug.substring(codDrug.length() - 8, codDrug.length());
-            this.searchResults.add(new SearchDrugTableEntry(codDrug, name));
-         }
-      } finally {
-         this.mldg.setRulesets();
-      }
+      executeSearchByCategory(categoryCode);
    }
 
    @Override
@@ -184,6 +135,19 @@ public class SearchDrugViewController implements Initializable {
          PopUps.showError("Errore", "Errore del server durante il caricamento delle malattie");
          LOGGER.error(exc.getMessage());
       }
+      
+      /*
+       //the specific disease combobox listen for changes in the primary combobox
+      //selection and loads the diseases of the specified type
+      this.cbTopDrugsCategory.getSelectionModel()
+              .selectedItemProperty().addListener((ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
+                     for (Entry<String, String> entry : this.drugTypeList.entrySet()) {
+                        if (Objects.equals(newValue, entry.getValue())) {
+                            executeSearchByCategory(entry.getKey());
+                        }
+                    return;
+                 }});
+      */
    }
 
    
@@ -242,5 +206,57 @@ public class SearchDrugViewController implements Initializable {
            });
            return row;
        });
+   }
+   
+   
+   private void executeSearchByCategory(String categoryCod){
+       String finalQuery = "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n"
+              + "prefix gdrug: <http://clinicaldb/dron> \n"
+              + "prefix dron: <http://purl.obolibrary.org/obo/DRON_> \n"
+              + "select ?drug ?drugName \n" 
+              + "where { \n";
+      String whereClause = 
+                    "graph gdrug: { \n";
+        
+      //partial name to seach
+      String partialName = this.tfDrugName.getText();
+
+      //drug categoryCod to search
+
+      LOGGER.debug("building search query...");
+      LOGGER.debug("nome: " + partialName);
+      LOGGER.debug("dis: " + categoryCod);
+
+      if (!categoryCod.isEmpty()) {
+          whereClause = whereClause.concat("?drug rdfs:subClassOf dron:000000"+categoryCode+" . \n"
+                  + "?drug rdfs:label ?drugName \n");
+      }
+      
+      //if partial name is not empty add the filter to the query
+      if (!partialName.isEmpty()) {
+         whereClause = whereClause.concat("FILTER NOT EXISTS { ?drug rdfs:subClassOf/rdfs:subClassOf+ ?drugName }"+"filter regex(?drugName, \"" + partialName + "\", \"i\") . \n");
+      }
+
+      finalQuery = finalQuery.concat(whereClause + " }\n" +
+                                                "}\n" +
+                                                "order by ?drugName ");
+      LOGGER.debug(finalQuery);
+
+      //execute the query
+      //this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
+      try (QueryExecution execution = QueryExecutionFactory.create(finalQuery, this.mldg.toDataset())) {
+         ResultSet res = execution.execSelect();
+
+         this.searchResults.clear();
+         while (res.hasNext()) {
+            QuerySolution sol = res.next();
+            String name = sol.getLiteral("drugName").getString();
+            String codDrug = sol.getResource("drug").getURI();
+            codDrug = codDrug.substring(codDrug.length() - 8, codDrug.length());
+            this.searchResults.add(new SearchDrugTableEntry(codDrug, name));
+         }
+      } finally {
+         this.mldg.setRulesets();
+      }
    }
 }

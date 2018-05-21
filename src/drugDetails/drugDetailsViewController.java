@@ -208,7 +208,6 @@ public class drugDetailsViewController implements Initializable {
                                                     +"group by ?f");
       
       LOGGER.debug(finalQuery);
-      ObservableMap<String,String> observableMap;
       Map<String,String> mapResult = new HashMap<>();
       //execute the query
       this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
@@ -259,10 +258,89 @@ public class drugDetailsViewController implements Initializable {
         
       }
       else{
-          this.txtProperty1.setVisible(false);
-          this.txtProperty1Desc.setVisible(false);
-          this.txtProperty2.setVisible(false);
-          this.txtProperty2Desc.setVisible(false);
+            String secondQuery = "prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                                "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                                "prefix owl: <http://www.w3.org/2002/07/owl#>\n" +
+                                "prefix gdrug: <http://clinicaldb/dron>\n" +
+                                "prefix dron: <http://purl.obolibrary.org/obo/DRON_>\n" +
+                                "select ?sdf ?name\n" +
+                                "from named gdrug:\n" +
+                                "where { \n" +
+                                "  graph gdrug: {";
+          
+            String secondWhereClause = "";
+            if (!drugCode.isEmpty()) {
+            secondWhereClause = secondWhereClause.concat("dron:"+drugCode+" owl:equivalentClass ?z .\n" +
+                                                        "    ?z owl:intersectionOf ?e .\n" +
+                                                        "    ?e rdf:rest*/rdf:first ?f .\n" +
+                                                        "    ?f owl:someValuesFrom ?y .\n" +
+                                                        "    ?y owl:intersectionOf ?m .\n" +
+                                                        "    ?m rdf:rest*/rdf:first ?o .\n" +
+                                                        "    ?o owl:someValuesFrom ?sdf .\n" +
+                                                        "    ?sdf rdfs:label ?name");
+            }
+      
+            secondQuery = secondQuery.concat(secondWhereClause    +"} \n"
+                                                    +"}");
+            
+            LOGGER.debug(secondQuery);
+            Map<String,String> secondResult = new HashMap<>();
+            //execute the query
+            this.mldg.setRulesets(SPARQLRuleset.EQUIVALENT_CLASS);
+            try (QueryExecution execution = QueryExecutionFactory.create(secondQuery, this.mldg.toDataset())) {
+               ResultSet res = execution.execSelect();
+               while (res.hasNext()) {
+                  QuerySolution sol = res.next();
+                  secondResult.put(sol.getResource("sdf").getURI(),sol.getLiteral("name").getString());          
+               }
+               LOGGER.debug(res);
+            }
+            finally{
+                this.mldg.setRulesets();
+            }
+            
+            if(!secondResult.isEmpty()){
+                int i=0;
+                for(String key : secondResult.keySet()){
+
+                  LOGGER.debug(key);
+                  LOGGER.debug(secondResult.get(key));
+                  if(!bearer_set){
+                      if(i==0){
+                          this.txtProperty0.setText(secondResult.get(key).toUpperCase());
+                      }
+                      else if(i==1){
+                          this.txtProperty1.setText(secondResult.get(key).toUpperCase());
+                      }else{
+                          this.txtProperty2.setText(secondResult.get(key).toUpperCase());
+                      }
+                  }
+                  else{
+                      if(i==0){
+                          this.txtProperty1.setText(secondResult.get(key).toUpperCase());
+                      }
+                      else if(i==1){
+                          this.txtProperty2.setText(secondResult.get(key).toUpperCase());
+                      }
+                  }
+                  setPropertyDescription(key, i);
+                  i++;
+
+                  if(secondResult.size() < 3){
+                      this.txtProperty2.setVisible(false);
+                      this.txtProperty2Desc.setVisible(false);
+                  }
+              }
+            }
+            else{
+
+                this.txtProperty0.setVisible(false);
+                this.txtProperty0Desc.setVisible(false);
+                this.txtProperty1.setVisible(false);
+                this.txtProperty1Desc.setVisible(false);
+                this.txtProperty2.setVisible(false);
+                this.txtProperty2Desc.setVisible(false);
+            }
       }
       
     }
