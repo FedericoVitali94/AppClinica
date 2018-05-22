@@ -25,6 +25,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TreeTableView;
 import javafx.stage.Stage;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.QueryExecution;
@@ -61,11 +62,14 @@ public class EHRViewController implements Initializable {
    private TableView<ExaminationTableEntry> tbvExamns;
    @FXML
    private TableView<SimpleStringProperty> tbvPastDiseases;
+   @FXML
+   private TableView<SimpleStringProperty> tbvDrugs;
 
    private ObservableList<SimpleStringProperty> alList;
    private ObservableList<SimpleStringProperty> cDisList;
    private ObservableList<SimpleStringProperty> pDisList;
    private ObservableList<ExaminationTableEntry> examList;
+   private ObservableList<SimpleStringProperty> drugsList;
    private MarkLogicDatasetGraph mldg;
 
    /**
@@ -82,10 +86,12 @@ public class EHRViewController implements Initializable {
       this.cDisList = FXCollections.observableArrayList();
       this.pDisList = FXCollections.observableArrayList();
       this.examList = FXCollections.observableArrayList();
+      this.drugsList = FXCollections.observableArrayList();
 
       this.setCols("Allergie", this.alList, this.tbvAllergy);
       this.setCols("Malattie Passate", this.pDisList, this.tbvPastDiseases);
       this.setCols("Malattie Correnti", this.cDisList, this.tbvCurrentDiseases);
+      this.setCols("Farmaci Assunti", this.drugsList, this.tbvDrugs);
       this.setExamCols();
 
       //set double click event on table row
@@ -108,7 +114,12 @@ public class EHRViewController implements Initializable {
                String disName = row.getItem().getValue();
                //load disease detail window
                try {
-                  FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DISEASE_DET_WIN));
+                   FXMLLoader loader;
+                   if(table.equals(this.tbvDrugs)){
+                    loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DRUG_DET_WIN));
+                   }else{
+                    loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DISEASE_DET_WIN));
+                   }
                   Parent view = (Parent) loader.load();
                   //set the person in the new window controller
                   loader.<DisDetViewController>getController().setDisAndInit(disName);
@@ -214,6 +225,8 @@ public class EHRViewController implements Initializable {
       this.setTableData(personUri, this.cDisList, query);
       query = QueryUtils.loadQueryFromFile("getPersonPastDiseases.txt");
       this.setTableData(personUri, this.pDisList, query);
+      query = QueryUtils.loadQueryFromFile("getPersonDrugs.txt");
+      this.setTableData(personUri, this.drugsList, query);
       query = QueryUtils.loadQueryFromFile("getPersonExaminations.txt");
       this.setExaminationsTableData(personUri, query);
    }
@@ -262,6 +275,7 @@ public class EHRViewController implements Initializable {
       query.setCommandText(queryStr);
       query.setIri("puri", pUri);
 
+      LOGGER.debug(query);
       this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
       try (QueryExecution execution = QueryExecutionFactory.create(query.asQuery(), this.mldg.toDataset())) {
          ResultSet res = execution.execSelect();
@@ -270,7 +284,7 @@ public class EHRViewController implements Initializable {
             obList.add(new SimpleStringProperty(sol.getLiteral("name").getString()));
          }
       } catch (MarkLogicServerException exc) {
-         PopUps.showError("Errore", "Errore del server durante il caricamento delle malattie");
+         PopUps.showError("Errore", "Errore del server durante il caricamento dei dati");
          LOGGER.error(exc.getMessage());
       } finally {
          this.mldg.setRulesets();

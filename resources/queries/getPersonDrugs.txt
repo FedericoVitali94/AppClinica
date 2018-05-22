@@ -1,0 +1,11 @@
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix cdata: <http://www.clinicaldb.org/clinicaldata_>
+
+select ?name
+where {
+      ?puri ?x ?disease .
+      ?disease rdfs:label ?diseaseName .
+      ?disease cdata:HasTherapy ?drug .
+      ?drug rdfs:label ?name
+}
+order by (?name)
