@@ -129,7 +129,7 @@ public class SearchDisViewController implements Initializable {
       //put the map data into the search result observable list to update the table
       this.searchResults.clear();
       matches.entrySet().stream().forEach(entry -> {
-         this.searchResults.add(new DiseaseBySympTableEntry(entry.getKey().getName(), entry.getValue()));
+         this.searchResults.add(new DiseaseBySympTableEntry(entry.getKey().getUri(), entry.getKey().getName(), entry.getValue()));
       });
    }
 
@@ -203,12 +203,13 @@ public class SearchDisViewController implements Initializable {
          row.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2 && (!row.isEmpty())) {
                String disName = row.getItem().getDiseaseName();
+               String disCod = row.getItem().getDisCod();
                //load disease detail window
                try {
                   FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DISEASE_DET_WIN));
                   Parent view = (Parent) loader.load();
                   //set the person in the new window controller
-                  loader.<DisDetViewController>getController().setDisAndInit(disName);
+                  loader.<DisDetViewController>getController().setDisAndInit(disName, disCod);
 
                   Scene scene = new Scene(view);
                   Stage newStage = new Stage();

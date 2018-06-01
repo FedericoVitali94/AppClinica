@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 public class DiseaseBySympTableEntry {
    private final static Logger LOGGER = Logger.getLogger(DiseaseBySympTableEntry.class);
    
+   private final SimpleStringProperty disCod;
    private final SimpleStringProperty diseaseName;
    private final SimpleIntegerProperty matchingSymptoms;
    
@@ -24,11 +25,15 @@ public class DiseaseBySympTableEntry {
     * @param diseaseName
     * @param matchingSymptoms 
     */
-   public DiseaseBySympTableEntry(final String diseaseName, final int matchingSymptoms) {
+   public DiseaseBySympTableEntry(final String disCod, final String diseaseName, final int matchingSymptoms) {
+       this.disCod = new SimpleStringProperty(disCod);
       this.diseaseName = new SimpleStringProperty(diseaseName);
       this.matchingSymptoms = new SimpleIntegerProperty(matchingSymptoms);
    }
 
+   public String getDisCod(){
+       return this.disCod.get();
+   }
    /***
     * 
     * @return disease name
@@ -45,6 +50,9 @@ public class DiseaseBySympTableEntry {
       return this.matchingSymptoms.get();
    }
 
+   public SimpleStringProperty diseaseCodProperty(){
+       return this.disCod;
+   }
    /***
     * Getter for matchingSymptoms property
     * @return 

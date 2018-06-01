@@ -86,7 +86,7 @@ public class SearchDisViewController_uniqueQuery implements Initializable {
 
       String queryStr = "prefix doidp: <http://purl.obolibrary.org/obo/DOID#>\n"
               + "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
-              + "select ?disName (count(?symp) as ?nMatching)\n"
+              + "select ?dis ?disName (count(?symp) as ?nMatching)\n"
               + "where {\n";
       String unionClause = " {\n"
               + "    ?dis doidp:has_symptom ?symp .\n"
@@ -112,8 +112,9 @@ public class SearchDisViewController_uniqueQuery implements Initializable {
          while (res.hasNext()) {
             QuerySolution sol = res.next();
             String name = sol.getLiteral("disName").getString();
+            String cod = sol.getResource("dis").getURI();
             int num = sol.getLiteral("nMatching").getInt();
-            this.searchResults.add(new DiseaseBySympTableEntry(name, num));
+            this.searchResults.add(new DiseaseBySympTableEntry(cod, name, num));
          }
       }
    }

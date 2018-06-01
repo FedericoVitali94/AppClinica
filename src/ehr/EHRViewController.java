@@ -10,6 +10,7 @@ import com.marklogic.client.MarkLogicServerException;
 import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
+import diseaseDetail.DiseaseTableEntry;
 import drugDetails.drugDetailsViewController;
 import java.io.IOException;
 import java.net.URL;
@@ -57,19 +58,19 @@ public class EHRViewController implements Initializable {
    @FXML
    private Label labSurname;
    @FXML
-   private TableView<SimpleStringProperty> tbvAllergy;
+   private TableView<DiseaseTableEntry> tbvAllergy;
    @FXML
-   private TableView<SimpleStringProperty> tbvCurrentDiseases;
+   private TableView<DiseaseTableEntry> tbvCurrentDiseases;
    @FXML
    private TableView<ExaminationTableEntry> tbvExamns;
    @FXML
-   private TableView<SimpleStringProperty> tbvPastDiseases;
+   private TableView<DiseaseTableEntry> tbvPastDiseases;
    @FXML
    private TableView<SearchDrugTableEntry> tbvDrugs;
 
-   private ObservableList<SimpleStringProperty> alList;
-   private ObservableList<SimpleStringProperty> cDisList;
-   private ObservableList<SimpleStringProperty> pDisList;
+   private ObservableList<DiseaseTableEntry> alList;
+   private ObservableList<DiseaseTableEntry> cDisList;
+   private ObservableList<DiseaseTableEntry> pDisList;
    private ObservableList<ExaminationTableEntry> examList;
    private ObservableList<SearchDrugTableEntry> drugsList;
    private MarkLogicDatasetGraph mldg;
@@ -109,12 +110,13 @@ public class EHRViewController implements Initializable {
     * double click on table row opens a new window with details about the selected disease
     * @param table
     */
-   private void setDoubleClickHandler(TableView<SimpleStringProperty> table) {
+   private void setDoubleClickHandler(TableView<DiseaseTableEntry> table) {
       table.setRowFactory(tr -> {
-         TableRow<SimpleStringProperty> row = new TableRow<>();
+         TableRow<DiseaseTableEntry> row = new TableRow<>();
          row.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2 && (!row.isEmpty())) {
-               String disName = row.getItem().getValue();
+               String disName = row.getItem().getName();
+               String disCod = row.getItem().getCod();
                //load disease detail window
                try {
                    FXMLLoader loader;
@@ -122,7 +124,7 @@ public class EHRViewController implements Initializable {
                     loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DISEASE_DET_WIN));
                     view = (Parent) loader.load();
                   //set the person in the new window controller
-                  loader.<DisDetViewController>getController().setDisAndInit(disName);
+                  loader.<DisDetViewController>getController().setDisAndInit(disName, disCod);
                    
 
                   Scene scene = new Scene(view);
@@ -208,11 +210,11 @@ public class EHRViewController implements Initializable {
     * @param table
     */
    private void setCols(final String colName,
-                        ObservableList<SimpleStringProperty> obList,
-                        TableView<SimpleStringProperty> table) {
-      TableColumn<SimpleStringProperty, String> col = new TableColumn(colName);
+                        ObservableList<DiseaseTableEntry> obList,
+                        TableView<DiseaseTableEntry> table) {
+      TableColumn<DiseaseTableEntry, String> col = new TableColumn(colName);
       col.setCellValueFactory(cellData -> {
-         return cellData.getValue();
+         return cellData.getValue().nameProperty();
       });
 
       table.getColumns().add(col);
@@ -299,7 +301,7 @@ public class EHRViewController implements Initializable {
     * @param query
     */
    private void setTableData(final String pUri,
-                             ObservableList<SimpleStringProperty> obList,
+                             ObservableList<DiseaseTableEntry> obList,
                              final String queryStr) {
 
       ParameterizedSparqlString query = new ParameterizedSparqlString();
@@ -312,7 +314,10 @@ public class EHRViewController implements Initializable {
          ResultSet res = execution.execSelect();
          while (res.hasNext()) {
             QuerySolution sol = res.next();
-            obList.add(new SimpleStringProperty(sol.getLiteral("name").getString()));
+            String name = sol.getLiteral("name").getString();
+            String uri = sol.getResource("dis").getURI();
+            obList.add(new DiseaseTableEntry(uri, name));
+            
          }
       } catch (MarkLogicServerException exc) {
          PopUps.showError("Errore", "Errore del server durante il caricamento dei dati");

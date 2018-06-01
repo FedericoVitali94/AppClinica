@@ -112,28 +112,12 @@ public class DisDetViewController implements Initializable {
        this.tbvExams.setItems(this.olExams);
    }
 
-   public void setDisAndInit(final String disName) {
-      //get the disease uri
-      String queryStr = "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
-              + "select ?dis "
-              + "where {"
-              + " ?dis rdfs:label ?disLab . "
-              + " filter regex(?disLab, \"^" + disName + "$\", \"i\") . "
-              + "}";
-      
-      try (QueryExecution execution = QueryExecutionFactory.create(queryStr, this.mldg.toDataset())) {
-         ResultSet res = execution.execSelect();
-         if (res.hasNext()) {
-            QuerySolution sol = res.next();
-            this.disUri = sol.getResource("dis").getURI();
-         }
-      } catch (MarkLogicServerException exc) {
-         PopUps.showError("Errore", "Errore del server durante il caricamento delle malattie");
-         LOGGER.error(exc.getMessage());
-      }
-      
+   public void setDisAndInit(final String disName, final String disUri) {
+     
+      this.disUri = disUri;
+        
       this.setBaseData(this.disUri);
-      queryStr = QueryUtils.loadQueryFromFile("getDiseaseHierarchy.txt");
+      String queryStr = QueryUtils.loadQueryFromFile("getDiseaseHierarchy.txt");
       this.setTableData(this.disUri, this.olIsA, queryStr, SPARQLRuleset.SUBCLASS_OF);
       queryStr = QueryUtils.loadQueryFromFile("getDiseaseSymptoms.txt");      
       this.setTableData(this.disUri, this.olSympt, queryStr, SPARQLRuleset.OWL_HORST);
