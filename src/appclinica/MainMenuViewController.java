@@ -26,6 +26,8 @@ public class MainMenuViewController implements Initializable {
    private Button butSearchPerson;
    @FXML
    private Button butSearchDrug;
+   @FXML
+   private Button butDiagnosis;
 
    @FXML
    private void handleSearchDisease(ActionEvent event) {
@@ -40,6 +42,11 @@ public class MainMenuViewController implements Initializable {
    @FXML
    private void handleSearchDrug(ActionEvent event){
        Redirecter.getInstance().redirect(this.butSearchDrug.getScene(), Redirecter.SEARCH_DRUG_WIN, true);
+   }
+   
+   @FXML
+   private void handleArtificialDiagnosis(ActionEvent event){
+       Redirecter.getInstance().redirect(this.butDiagnosis.getScene(), Redirecter.DIAGNOSIS_WIN, true);
    }
    
    /**

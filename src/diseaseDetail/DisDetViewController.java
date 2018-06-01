@@ -9,6 +9,7 @@ import com.marklogic.client.MarkLogicServerException;
 import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
+import ehr.ExaminationTableEntry;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.beans.property.SimpleStringProperty;
@@ -26,6 +27,7 @@ import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.log4j.Logger;
+import searchDrug.SearchDrugTableEntry;
 import util.PopUps;
 import util.QueryUtils;
 
@@ -44,9 +46,17 @@ public class DisDetViewController implements Initializable {
    private TableView<SimpleStringProperty> tbvIsA;
    @FXML
    private TableView<SimpleStringProperty> tbvSympt;
+   
+   @FXML
+   private TableView<SearchDrugTableEntry> tbvTherapies;
+   
+   @FXML
+   private TableView<ExaminationTableEntry> tbvExams;
 
    private ObservableList<SimpleStringProperty> olIsA;
    private ObservableList<SimpleStringProperty> olSympt;
+   private ObservableList<SearchDrugTableEntry> olTherapies;
+   private ObservableList<ExaminationTableEntry> olExams;
    private MarkLogicDatasetGraph mldg;
    private String disUri;
 
@@ -60,9 +70,13 @@ public class DisDetViewController implements Initializable {
       this.mldg = ServerConnectionManager.getInstance().getDatasetClient();
       this.olIsA = FXCollections.observableArrayList();
       this.olSympt = FXCollections.observableArrayList();
+      this.olTherapies = FXCollections.observableArrayList();
+      this.olExams = FXCollections.observableArrayList();
 
       this.setCols("Appartenenza", this.olIsA, this.tbvIsA);
       this.setCols("Sintomi Comuni", this.olSympt, this.tbvSympt);
+      this.setTherapyTableCol();
+      this.setExamsTableCol();
    }
 
    /**
@@ -82,6 +96,20 @@ public class DisDetViewController implements Initializable {
 
       table.getColumns().add(col);
       table.setItems(obList);
+   }
+   
+   private void setTherapyTableCol(){
+       TableColumn<SearchDrugTableEntry, String> col = new TableColumn("Farmaci Consigliati");
+       col.setCellValueFactory(new PropertyValueFactory<>("name"));
+       this.tbvTherapies.getColumns().add(col);
+       this.tbvTherapies.setItems(this.olTherapies);
+   }
+   
+   private void setExamsTableCol(){
+       TableColumn<ExaminationTableEntry, String> col = new TableColumn("Esami di controllo");
+       col.setCellValueFactory(new PropertyValueFactory<>("name"));
+       this.tbvExams.getColumns().add(col);
+       this.tbvExams.setItems(this.olExams);
    }
 
    public void setDisAndInit(final String disName) {
@@ -109,6 +137,9 @@ public class DisDetViewController implements Initializable {
       this.setTableData(this.disUri, this.olIsA, queryStr, SPARQLRuleset.SUBCLASS_OF);
       queryStr = QueryUtils.loadQueryFromFile("getDiseaseSymptoms.txt");      
       this.setTableData(this.disUri, this.olSympt, queryStr, SPARQLRuleset.OWL_HORST);
+      
+      this.setTherapyData(this.disUri, this.olTherapies);
+      this.setExamsData(this.disUri, this.olExams);
    }
    
    /***
@@ -128,7 +159,7 @@ public class DisDetViewController implements Initializable {
             this.taDescription.setText(sol.getLiteral("descr").getString());
          }
       } catch (MarkLogicServerException exc) {
-         PopUps.showError("Errore", "Errore del server durante il caricamento delle malattie");
+         PopUps.showError("Errore", "Errore del server durante il caricamento dei dati base della malattia");
          LOGGER.error(exc.getMessage());
       }
    }
@@ -156,11 +187,79 @@ public class DisDetViewController implements Initializable {
             obList.add(new SimpleStringProperty(sol.getLiteral("name").getString()));
          }
       } catch (MarkLogicServerException exc) {
-         PopUps.showError("Errore", "Errore del server durante il caricamento delle malattie");
+         PopUps.showError("Errore", "Errore del server durante il caricamento delle tabelle");
          LOGGER.error(exc.getMessage());
       } finally {
          this.mldg.setRulesets();
       }
    }
 
+   private void setTherapyData(final String disUri, ObservableList<SearchDrugTableEntry> olDrug){
+       String query = "prefix cdata1: <http://www.clinicaldb.org/clinicaldata_>\n" +
+                        "prefix cdata2: <http://www.clinicaldb.org#clinicaldata_>\n" +
+                        "prefix foaf: <http://xmlns.com/foaf/0.1/>\n" +
+                        "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                        "select ?drugUri ?drugName\n" +
+                        "where {\n" +
+                        "  {\n" +
+                        "<"+disUri+"> cdata1:HasTherapy ?drugUri .\n" +
+                        "   ?drugUri rdfs:label ?drugName\n" +
+                        "  }\n" +
+                        "  UNION{\n" +
+                        "<"+disUri+"> cdata2:HasTherapy ?drugUri .\n" +
+                        "   ?drugUri rdfs:label ?drugName\n" +
+                        "  }\n" +
+                        "}";
+       this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
+      try (QueryExecution execution = QueryExecutionFactory.create(query, this.mldg.toDataset())) {
+         ResultSet res = execution.execSelect();
+         while (res.hasNext()) {
+            QuerySolution sol = res.next();
+            String drugName = sol.getLiteral("drugName").getString();
+            String drugCod = sol.getResource("drugUri").getURI();
+            olDrug.add(new SearchDrugTableEntry(drugCod, drugName));
+            LOGGER.debug(drugName);
+         }
+      } catch (MarkLogicServerException exc) {
+         PopUps.showError("Errore", "Errore del server durante il caricamento delle terapie");
+         LOGGER.error(exc.getMessage());
+      } finally {
+         this.mldg.setRulesets();
+      }
+   }
+   
+   private void setExamsData(final String disUri, ObservableList<ExaminationTableEntry> olExams){
+       String query = "prefix cdata1: <http://www.clinicaldb.org#clinicaldata_>\n" +
+                        "prefix cdata2: <http://www.clinicaldb.org/clinicaldata_>\n" +
+                        "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+                        "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                        "select ?examUri ?examName\n" +
+                        "where {\n" +
+                        "  {\n" +
+                        "<"+disUri+"> cdata1:hasMedicalTest ?examUri .\n" +
+                        "   ?examUri rdfs:label ?examName\n" +
+                        "  }\n" +
+                        "UNION\n" +
+                        "  {\n" +
+                        "<"+disUri+"> cdata2:hasMedicalTest ?examUri .\n" +
+                        "   ?examUri rdfs:label ?examName\n" +
+                        "  }\n" +
+                        "}";
+       this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
+      try (QueryExecution execution = QueryExecutionFactory.create(query, this.mldg.toDataset())) {
+         ResultSet res = execution.execSelect();
+         while (res.hasNext()) {
+            QuerySolution sol = res.next();
+            String examName = sol.getLiteral("examName").getString();
+            String examCod = sol.getResource("examUri").getURI();
+            olExams.add(new ExaminationTableEntry(examName, "", examCod));
+            LOGGER.debug(examName);
+         }
+      } catch (MarkLogicServerException exc) {
+         PopUps.showError("Errore", "Errore del server durante il caricamento degli esami");
+         LOGGER.error(exc.getMessage());
+      } finally {
+         this.mldg.setRulesets();
+      }
+   }
 }

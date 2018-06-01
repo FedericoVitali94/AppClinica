@@ -29,6 +29,7 @@ public class Redirecter {
    public final static String DRUG_DET_WIN = "drugDetails/drugDetailsView.fxml";
    public final static String EXAM_DET_WIN = "ehr/ExaminationView.fxml";
    public final static String MAIN_MENU_WIN = "appclinica/MainMenuView.fxml";
+   public final static String DIAGNOSIS_WIN = "recommendedSympExams/ArtificialDiagnosisView.fxml";
 
    private static Redirecter redir = null;
    private final static Logger LOGGER = Logger.getLogger(Redirecter.class);

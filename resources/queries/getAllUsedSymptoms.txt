@@ -1,0 +1,47 @@
+prefix gowl: <http://clinicaldb/newontology>
+prefix cdata: <http://www.clinicaldb.org#clinicaldata_>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix doidp: <http://purl.obolibrary.org/obo/DOID#>
+prefix gdoid: <http://clinicaldb/doid>
+prefix gsymp: <http://clinicaldb/symp>
+prefix gdoidsymp: <http://clinicaldb/doid/symp>
+
+select distinct ?symp ?sympName
+from named gsymp:
+from named gdoid:
+from named gdoidsymp:
+from named gowl:
+where {
+   {
+      graph gdoid: {
+         ?dis rdfs:subClassOf ?supDis . 
+      }
+      graph gdoidsymp: {
+         ?supDis doidp:has_symptom ?symp .
+      }
+      graph gsymp: {
+         ?symp rdfs:label ?sympName
+      }
+   }
+   union
+   {
+      graph gdoidsymp: {
+         ?dis doidp:has_symptom ?symp .
+      }
+      graph gsymp: {
+         ?symp rdfs:label ?sympName
+      }
+   }
+  union{
+    {
+    graph gowl: {
+       ?dis rdfs:subClassOf* <http://purl.obolibrary.org/obo/DOID_4> .
+       ?dis cdata:HasSymptom ?symp .
+       ?symp rdfs:label ?sympName
+       
+    }
+     }
+  }
+}
+
+order by ?sympName

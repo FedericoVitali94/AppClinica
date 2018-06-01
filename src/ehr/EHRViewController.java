@@ -10,6 +10,7 @@ import com.marklogic.client.MarkLogicServerException;
 import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
+import drugDetails.drugDetailsViewController;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -33,6 +34,7 @@ import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.log4j.Logger;
+import searchDrug.SearchDrugTableEntry;
 import util.PopUps;
 import util.QueryUtils;
 import util.Redirecter;
@@ -63,13 +65,13 @@ public class EHRViewController implements Initializable {
    @FXML
    private TableView<SimpleStringProperty> tbvPastDiseases;
    @FXML
-   private TableView<SimpleStringProperty> tbvDrugs;
+   private TableView<SearchDrugTableEntry> tbvDrugs;
 
    private ObservableList<SimpleStringProperty> alList;
    private ObservableList<SimpleStringProperty> cDisList;
    private ObservableList<SimpleStringProperty> pDisList;
    private ObservableList<ExaminationTableEntry> examList;
-   private ObservableList<SimpleStringProperty> drugsList;
+   private ObservableList<SearchDrugTableEntry> drugsList;
    private MarkLogicDatasetGraph mldg;
 
    /**
@@ -91,13 +93,14 @@ public class EHRViewController implements Initializable {
       this.setCols("Allergie", this.alList, this.tbvAllergy);
       this.setCols("Malattie Passate", this.pDisList, this.tbvPastDiseases);
       this.setCols("Malattie Correnti", this.cDisList, this.tbvCurrentDiseases);
-      this.setCols("Farmaci Assunti", this.drugsList, this.tbvDrugs);
+      this.setDrugsCols();
       this.setExamCols();
 
       //set double click event on table row
       this.setDoubleClickHandler(this.tbvAllergy);
       this.setDoubleClickHandler(this.tbvCurrentDiseases);
       this.setDoubleClickHandler(this.tbvPastDiseases);
+      this.setDrugDoubleClickHandler();
       this.setExaminationDoubleClickHandler();
    }
 
@@ -115,14 +118,12 @@ public class EHRViewController implements Initializable {
                //load disease detail window
                try {
                    FXMLLoader loader;
-                   if(table.equals(this.tbvDrugs)){
-                    loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DRUG_DET_WIN));
-                   }else{
+                   Parent view = null;
                     loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DISEASE_DET_WIN));
-                   }
-                  Parent view = (Parent) loader.load();
+                    view = (Parent) loader.load();
                   //set the person in the new window controller
                   loader.<DisDetViewController>getController().setDisAndInit(disName);
+                   
 
                   Scene scene = new Scene(view);
                   Stage newStage = new Stage();
@@ -168,6 +169,36 @@ public class EHRViewController implements Initializable {
       });
    }
 
+   private void setDrugDoubleClickHandler(){
+       this.tbvDrugs.setRowFactory(tr -> {
+           TableRow<SearchDrugTableEntry> row = new TableRow<>();
+           row.setOnMouseClicked(event -> {
+               if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                   String drugName = row.getItem().getName();
+                   String drugCod = row.getItem().getCod();
+                   LOGGER.debug(drugName);
+                   LOGGER.debug(drugCod);
+                   //load disease detail window
+                   try {
+                       FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DRUG_DET_WIN));
+                       Parent view = (Parent) loader.load();
+                       //set the drug in the new window controller
+                       loader.<drugDetailsViewController>getController().setDrugAndInit(drugCod, drugName);
+                       
+                       Scene scene = new Scene(view);
+                       Stage newStage = new Stage();
+                       newStage.setScene(scene);
+                       newStage.setTitle(drugName);
+                       newStage.show();
+                   } catch (IOException exc) {
+                       PopUps.showError("Errore", "Impossibile caricare la pagina");
+                       LOGGER.error(exc.getMessage());
+                   }
+               }
+           });
+           return row;
+       });
+   }
    /**
     * *
     * set the column and column cell factory
@@ -226,7 +257,7 @@ public class EHRViewController implements Initializable {
       query = QueryUtils.loadQueryFromFile("getPersonPastDiseases.txt");
       this.setTableData(personUri, this.pDisList, query);
       query = QueryUtils.loadQueryFromFile("getPersonDrugs.txt");
-      this.setTableData(personUri, this.drugsList, query);
+//      this.setTableData(personUri, this.drugsList, query);
       query = QueryUtils.loadQueryFromFile("getPersonExaminations.txt");
       this.setExaminationsTableData(personUri, query);
    }
@@ -313,6 +344,19 @@ public class EHRViewController implements Initializable {
          PopUps.showError("Errore", "Errore del server durante il caricamento degli esami");
          LOGGER.error(exc.getMessage());
       }
+   }
+   
+   private void setDrugsCols(){
+       TableColumn<SearchDrugTableEntry, String> nameCol = new TableColumn("Farmaci Consigliati");
+      nameCol.setCellValueFactory(cellData -> {
+         return cellData.getValue().nameProperty();
+      });
+      
+      
+      this.tbvDrugs.getColumns().addAll(
+              nameCol
+      );
+      this.tbvDrugs.setItems(this.drugsList);
    }
 
 }

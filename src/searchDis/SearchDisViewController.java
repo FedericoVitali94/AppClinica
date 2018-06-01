@@ -255,7 +255,7 @@ public class SearchDisViewController implements Initializable {
     * load symptoms into cbs.
     */
    private void loadSymptomsAndSetCBValues() {
-      String queryStr = QueryUtils.loadQueryFromFile("getAllSymptoms.txt");
+      String queryStr = QueryUtils.loadQueryFromFile("getAllUsedSymptoms.txt");
       MarkLogicDatasetGraph mldg = ServerConnectionManager.getInstance().getDatasetClient();
 
       mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);

@@ -2,19 +2,14 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 prefix gdrug: <http://clinicaldb/dron>
 prefix dron: <http://purl.obolibrary.org/obo/DRON_>
 prefix bfo: <http://purl.obolibrary.org/obo/BFO_00000>
+prefix gowl: <http://clinicaldb/newontology>
 
 select ?category ?catName
-from named gdrug:
+from named gowl:
 where {
-   graph gdrug: {
-      ?category rdfs:subClassOf* bfo:30 .
+   graph gowl: {
+      ?category rdfs:subClassOf <http://www.clinicaldb.org/drug> .
       ?category rdfs:label ?catName
-      FILTER regex(?category, "DRON")
-      FILTER regex(?catName, "drug") 
-      MINUS {
-        ?category rdfs:label "packaged drug product"@en .
-            }
-   }
-         
+   }     
 }
 order by ?catName

@@ -1,8 +1,19 @@
 prefix doidp: <http://purl.obolibrary.org/obo/DOID#>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+prefix cdata: <http://www.clinicaldb.org#clinicaldata_>
+prefix gowl: <http://clinicaldb/newontology>
+
 select distinct ?dis ?disName
 where {
+  {
    ?dis doidp:has_symptom ?symp .
    ?dis rdfs:label ?disName .
    ?symp rdfs:subClassOf* ?sympUri
+         }union{
+    graph gowl:{
+      ?dis cdata:HasSymptom ?symp .
+   ?dis rdfs:label ?disName .
+   ?symp rdfs:subClassOf* ?sympUri
+    }
+  }
 }
