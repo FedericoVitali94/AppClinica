@@ -1,3 +1,5 @@
+prefix gowl: <http://clinicaldb/newontology>
+prefix cdata: <http://www.clinicaldb.org#clinicaldata_>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 prefix doidp: <http://purl.obolibrary.org/obo/DOID#>
 prefix gdoid: <http://clinicaldb/doid>
@@ -8,6 +10,7 @@ select distinct ?name
 from named gsymp:
 from named gdoid:
 from named gdoidsymp:
+from named gowl:
 where {
    {
       graph gdoid: {
@@ -29,4 +32,13 @@ where {
          ?symp rdfs:label ?name
       }
    }
+  union{
+    {
+    graph gowl: {
+       ?dis rdfs:subClassOf ?supDis . 
+       ?dis cdata:HasSymptom ?sim .
+      ?sim rdfs:label ?name
+    }
+     }
+  }
 }

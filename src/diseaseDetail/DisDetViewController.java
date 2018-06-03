@@ -9,18 +9,26 @@ import com.marklogic.client.MarkLogicServerException;
 import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
+import drugDetails.drugDetailsViewController;
 import ehr.ExaminationTableEntry;
+import ehr.ExaminationViewController;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Stage;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -30,6 +38,7 @@ import org.apache.log4j.Logger;
 import searchDrug.SearchDrugTableEntry;
 import util.PopUps;
 import util.QueryUtils;
+import util.Redirecter;
 
 /**
  * FXML Controller class
@@ -77,6 +86,9 @@ public class DisDetViewController implements Initializable {
       this.setCols("Sintomi Comuni", this.olSympt, this.tbvSympt);
       this.setTherapyTableCol();
       this.setExamsTableCol();
+      
+      this.setDrugDoubleClickHandler();
+      this.setExamsDoubleClickHandler();
    }
 
    /**
@@ -217,17 +229,19 @@ public class DisDetViewController implements Initializable {
                         "prefix cdata2: <http://www.clinicaldb.org/clinicaldata_>\n" +
                         "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
                         "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
-                        "select ?examUri ?examName\n" +
+                        "select ?examUri ?examName ?examDate ?examFile\n" +
                         "where {\n" +
                         "  {\n" +
                         "<"+disUri+"> cdata1:hasMedicalTest ?examUri .\n" +
-                        "   ?examUri rdfs:label ?examName\n" +
-                        "  }\n" +
+                        "   ?examUri rdfs:label ?examName .\n" +
+                        "   ?examUri cdata1:HasDate ?examDate . \n" +
+                        "   ?examUri cdata1:HasFile ?examFile}\n" +
                         "UNION\n" +
                         "  {\n" +
                         "<"+disUri+"> cdata2:hasMedicalTest ?examUri .\n" +
-                        "   ?examUri rdfs:label ?examName\n" +
-                        "  }\n" +
+                        "   ?examUri rdfs:label ?examName .\n" +
+                        "  ?examUri cdata2:HasDate ?examDate . \n" +
+                        "   ?examUri cdata2:HasFile ?examFile}\n" +
                         "}";
        this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
       try (QueryExecution execution = QueryExecutionFactory.create(query, this.mldg.toDataset())) {
@@ -236,7 +250,9 @@ public class DisDetViewController implements Initializable {
             QuerySolution sol = res.next();
             String examName = sol.getLiteral("examName").getString();
             String examCod = sol.getResource("examUri").getURI();
-            olExams.add(new ExaminationTableEntry(examName, "", examCod));
+            String examFile = sol.getResource("examFile").getURI();
+            String examDate = sol.getLiteral("examDate").getString();
+            olExams.add(new ExaminationTableEntry(examName, examDate, examFile));
             LOGGER.debug(examName);
          }
       } catch (MarkLogicServerException exc) {
@@ -246,4 +262,65 @@ public class DisDetViewController implements Initializable {
          this.mldg.setRulesets();
       }
    }
+
+
+   private void setDrugDoubleClickHandler(){
+        this.tbvTherapies.setRowFactory(tr -> {
+           TableRow<SearchDrugTableEntry> row = new TableRow<>();
+           row.setOnMouseClicked(event -> {
+               if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                   String drugName = row.getItem().getName();
+                   String drugCod = row.getItem().getCod();
+                   drugCod = drugCod.substring(drugCod.length() - 8, drugCod.length());
+                   LOGGER.debug(drugName);
+                   LOGGER.debug(drugCod);
+                   //load disease detail window
+                   try {
+                       FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DRUG_DET_WIN));
+                       Parent view = (Parent) loader.load();
+                       //set the drug in the new window controller
+                       loader.<drugDetailsViewController>getController().setDrugAndInit(drugCod, drugName);
+                       
+                       Scene scene = new Scene(view);
+                       Stage newStage = new Stage();
+                       newStage.setScene(scene);
+                       newStage.setTitle(drugName);
+                       newStage.show();
+                   } catch (IOException exc) {
+                       PopUps.showError("Errore", "Impossibile caricare la pagina del farmaco");
+                       LOGGER.error(exc.getMessage());
+                   }
+               }
+           });
+           return row;
+       });
+   }
+   
+   private void setExamsDoubleClickHandler(){
+        this.tbvExams.setRowFactory(tr -> {
+         TableRow<ExaminationTableEntry> row = new TableRow<>();
+         row.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && (!row.isEmpty())) {
+               String imgUri = row.getItem().getUri();
+               //load examination detail window
+               try {
+                  FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.EXAM_DET_WIN));
+                  Parent view = (Parent) loader.load();
+                  loader.<ExaminationViewController>getController().setImg(imgUri);
+
+                  Scene scene = new Scene(view);
+                  Stage newStage = new Stage();
+                  newStage.setScene(scene);
+                  newStage.show();
+               } catch (IOException exc) {
+                  PopUps.showError("Errore", "Impossibile caricare la pagina");
+                  LOGGER.error(exc.getMessage());
+               }
+            }
+         });
+         return row;
+      });
+   }
+
+
 }
