@@ -30,10 +30,27 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TreeTableView;
 import javafx.stage.Stage;
 import org.apache.jena.query.ParameterizedSparqlString;
+import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
+import org.apache.jena.rdf.model.InfModel;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.reasoner.Reasoner;
+import org.apache.jena.reasoner.ReasonerRegistry;
+import org.apache.jena.reasoner.rulesys.GenericRuleReasoner;
+import org.apache.jena.reasoner.rulesys.GenericRuleReasonerFactory;
+import org.apache.jena.reasoner.rulesys.Rule;
+import org.apache.jena.util.FileManager;
+import org.apache.jena.vocabulary.ReasonerVocabulary;
 import org.apache.log4j.Logger;
 import searchDrug.SearchDrugTableEntry;
 import util.PopUps;
@@ -75,6 +92,50 @@ public class EHRViewController implements Initializable {
    private ObservableList<SearchDrugTableEntry> drugsList;
    private MarkLogicDatasetGraph mldg;
 
+   
+   private void reasoning(){
+       String inputFileName = "C:\\Users\\Mattia\\Desktop\\myOntology.owl";  
+        Model model = FileManager.get().loadModel(inputFileName);
+   LOGGER.debug("ci siamo");
+            //Setting up rules
+          String rule = "[rule1:(?d1 http://www.clinicaldb.org#clinicaldata_HasTherapy ?f)  " +
+                        "(?d2 http://www.clinicaldb.org#clinicaldata_HasTherapy ?f)" +
+                  "(?p http://www.clinicaldb.org/clinicaldata_SuffersFrom ?d1)" +
+                  "(?p http://www.clinicaldb.org/clinicaldata_SuffersFrom ?d2)" +
+                      "->(?p http://www.clinicaldb.org#clinicaldata_RecommendedDrug ?f)]";
+        LOGGER.debug("dopo regola");   
+          //query String
+          String queryString = "PREFIX cdata:<http://www.clinicaldb.org#clinicaldata_>" +
+        "SELECT *"  +
+        "WHERE {?x cdata:RecommendedDrug ?z}";
+ LOGGER.debug("dopo la query");
+        //set up reasoner
+        Reasoner reasoner = new GenericRuleReasoner(Rule.parseRules(rule));
+ LOGGER.debug("dopo reasoner");
+        InfModel inf = ModelFactory.createInfModel(reasoner, model);
+ LOGGER.debug("dopo inf model");
+        Query query = QueryFactory.create(queryString);
+        QueryExecution qe = QueryExecutionFactory.create(query, this.mldg.toDataset());
+        ResultSet results = qe.execSelect();
+LOGGER.debug("dopo esecuzione query");
+
+        while (results.hasNext()) {
+                    QuerySolution sol = results.next();
+                    LOGGER.debug(" ");
+                    LOGGER.debug(sol.getResource("x").getLocalName());
+                     LOGGER.debug("    ");
+                    LOGGER.debug(sol.getResource("y").getLocalName());
+                     LOGGER.debug("    ");
+                     LOGGER.debug(sol.getResource("z").getLocalName());
+        }
+       
+LOGGER.debug("dopo risultato query");
+
+        /*output result*/
+        //ResultSetFormatter.out(System.out, results, query);
+        qe.close(); 
+        LOGGER.debug("dopo chiusura query");
+   }
    /**
     * *
     * Initializes the controller class.
@@ -84,6 +145,8 @@ public class EHRViewController implements Initializable {
     */
    @Override
    public void initialize(URL url, ResourceBundle rb) {
+       
+       
       this.mldg = ServerConnectionManager.getInstance().getDatasetClient();
       this.alList = FXCollections.observableArrayList();
       this.cDisList = FXCollections.observableArrayList();
@@ -103,6 +166,10 @@ public class EHRViewController implements Initializable {
       this.setDoubleClickHandler(this.tbvPastDiseases);
       this.setDrugDoubleClickHandler();
       this.setExaminationDoubleClickHandler();
+       
+       
+       reasoning();
+       LOGGER.debug("dopo tutto");
    }
 
    /**
