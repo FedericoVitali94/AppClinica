@@ -12,17 +12,17 @@
          <font>
             <Font size="18.0" />
          </font></Label>
-      <TableView fx:id="tbvAllergy" layoutX="708.0" layoutY="78.0" prefHeight="224.0" prefWidth="200.0">
+      <TableView fx:id="tbvAllergy" layoutX="700.0" layoutY="311.0" prefHeight="247.0" prefWidth="208.0">
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <TableView fx:id="tbvPastDiseases" layoutX="349.0" layoutY="311.0" prefHeight="247.0" prefWidth="350.0">
+      <TableView fx:id="tbvPastDiseases" layoutX="15.0" layoutY="311.0" prefHeight="247.0" prefWidth="350.0">
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <TableView fx:id="tbvCurrentDiseases" layoutX="349.0" layoutY="78.0" prefHeight="224.0" prefWidth="350.0">
+      <TableView fx:id="tbvCurrentDiseases" layoutX="15.0" layoutY="78.0" prefHeight="224.0" prefWidth="350.0">
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
@@ -55,12 +55,12 @@
          <font>
             <Font name="System Bold" size="18.0" />
          </font></Label>
-      <TableView fx:id="tbvExamns" layoutX="708.0" layoutY="311.0" prefHeight="247.0" prefWidth="200.0">
+      <TableView fx:id="tbvExamns" layoutX="700.0" layoutY="78.0" prefHeight="224.0" prefWidth="208.0">
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <TableView fx:id="tbvDrugs" layoutX="20.0" layoutY="78.0" prefHeight="480.0" prefWidth="320.0">
+      <TableView fx:id="tbvRecommendedDrugs" layoutX="372.0" layoutY="78.0" prefHeight="224.0" prefWidth="320.0">
           <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
@@ -80,5 +80,10 @@
             <Font size="18.0" />
          </font>
       </Label>
+      <TableView fx:id="tbvAssumedDrugs" layoutX="372.0" layoutY="311.0" prefHeight="247.0" prefWidth="320.0" >
+          <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+         </columnResizePolicy>
+      </TableView>
    </children>
 </AnchorPane>

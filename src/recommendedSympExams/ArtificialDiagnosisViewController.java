@@ -5,7 +5,13 @@
  */
 package recommendedSympExams;
 
+import com.marklogic.client.DatabaseClient;
+import com.marklogic.client.DatabaseClientFactory;
 import com.marklogic.client.MarkLogicServerException;
+import com.marklogic.client.eval.EvalResult;
+import com.marklogic.client.eval.EvalResultIterator;
+import com.marklogic.client.eval.ServerEvaluationCall;
+import com.marklogic.client.io.JacksonHandle;
 import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
@@ -27,11 +33,20 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
+import org.apache.jena.graph.Node;
 import org.apache.jena.query.ParameterizedSparqlString;
+import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
+import org.apache.jena.rdf.model.InfModel;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.reasoner.Reasoner;
+import org.apache.jena.reasoner.rulesys.GenericRuleReasoner;
+import org.apache.jena.reasoner.rulesys.Rule;
 import org.apache.log4j.Logger;
 import searchDrug.SearchDrugTableEntry;
 import util.PopUps;
@@ -52,12 +67,13 @@ public class ArtificialDiagnosisViewController implements Initializable {
    @FXML
    private TableView<TableEntry> tableDisease = new TableView<>();
    @FXML
-   private TableView<TableEntry> tableExaminations = new TableView<>();
+   private TableView<TableEntry> tableExams = new TableView<>();
    
 
    private ObservableList<TableEntry> symps;
    private ObservableList<TableEntry> disease;
    private ObservableList<TableEntry> exams;
+   
     /**
      * Initializes the controller class.
      */
@@ -71,6 +87,7 @@ public class ArtificialDiagnosisViewController implements Initializable {
       this.setDiseaseDoubleClickHandler(this.tableDisease);
     }    
     
+   
     @FXML
    private void handleBackToMenu(ActionEvent event) {
       Redirecter.getInstance().redirect(this.tableSymptoms.getScene(), Redirecter.MAIN_MENU_WIN, true);
@@ -96,14 +113,13 @@ public class ArtificialDiagnosisViewController implements Initializable {
       this.tableDisease.setItems(this.disease);
       
       
-      
-      TableColumn<TableEntry, String> examsCol = new TableColumn("Recommended Examinations");
+      TableColumn<TableEntry, String> examsCol = new TableColumn("Recommended Exams");
       examsCol.setCellValueFactory(cellData -> {
          return cellData.getValue().nameProperty();
       });
-      this.tableExaminations.getColumns().addAll(examsCol);
+      this.tableExams.getColumns().addAll(examsCol);
       this.exams = FXCollections.observableArrayList();
-      this.tableExaminations.setItems(this.exams);
+      this.tableExams.setItems(this.exams);
    }
     
     private void populateSymptomsTable(){
@@ -141,6 +157,7 @@ public class ArtificialDiagnosisViewController implements Initializable {
                    
                    this.disease.clear();
                    populateDiseasesTable(symptomCod);
+                   populateExaminationsTable(symptomCod);
                }
            });
            return row;
@@ -172,25 +189,37 @@ public class ArtificialDiagnosisViewController implements Initializable {
       }
     }
     private void setDiseaseDoubleClickHandler(TableView<TableEntry> table){
-         this.tableDisease.setRowFactory(tr -> {
-           TableRow<TableEntry> row = new TableRow<>();
-           row.setOnMouseClicked(event -> {
-               if (event.getClickCount() == 2 && (!row.isEmpty())) {
-                   String disName = row.getItem().getName();
-                   String disCod = row.getItem().getCod();
-                   LOGGER.debug(disName);
-                   LOGGER.debug(disCod);
-                   
-                   this.exams.clear();
-                   populateExaminationsTable(disCod);
-               }
-           });
-           return row;
-       });
+       //to do
     }
  
-    private void populateExaminationsTable(String disCod){
-        
+    private void populateExaminationsTable(String sympCod){
+        LOGGER.debug(sympCod);
+        DatabaseClient client = DatabaseClientFactory.newClient("localhost",8000,new DatabaseClientFactory.DigestAuthContext("moriani", "andresilva"));
+       ServerEvaluationCall theCall = client.newServerEval();
+        String query = "let $my-store := sem:ruleset-store(\"/rules/myRules2.rules\", sem:store() )\n" +
+                        "return\n" +
+                        " sem:sparql('\n" +
+                        "prefix cdata: <http://www.clinicaldb.org/clinicaldata_>\n" +
+                        "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                        "select *\n" +
+                        "where{\n" +
+                        "  <"+sympCod+"> cdata:RecommendedExamination ?examination . \n" +
+                        "  ?examination rdfs:label ?examinationName\n" +
+                        "}\n" +
+                        "', (), (),\n" +
+                        " $my-store\n" +
+                        " )";
+        LOGGER.debug("minne sono");
+        theCall.xquery(query);
+        EvalResultIterator result = theCall.eval();
+        while (result.hasNext()) {
+            LOGGER.debug("minne 2");
+            EvalResult sol = result.next();
+            JacksonHandle handle = sol.get(new JacksonHandle());
+            LOGGER.debug("minne "+handle.get().get("examinationName").asText());
+            LOGGER.debug("minne "+handle.get().get("examination").asText());
+            this.exams.add(new TableEntry(handle.get().get("examinationName").asText(), handle.get().get("examination").asText()));
+         }
     }
     
 }

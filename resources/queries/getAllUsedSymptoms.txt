@@ -1,5 +1,5 @@
 prefix gowl: <http://clinicaldb/newontology>
-prefix cdata: <http://www.clinicaldb.org#clinicaldata_>
+prefix cdata: <http://www.clinicaldb.org/clinicaldata_>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 prefix doidp: <http://purl.obolibrary.org/obo/DOID#>
 prefix gdoid: <http://clinicaldb/doid>

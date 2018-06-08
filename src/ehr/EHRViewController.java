@@ -5,8 +5,17 @@
  */
 package ehr;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.marklogic.client.DatabaseClient;
+import com.marklogic.client.DatabaseClientFactory;
+import com.marklogic.client.DatabaseClientFactory.DigestAuthContext;
 import diseaseDetail.DisDetViewController;
 import com.marklogic.client.MarkLogicServerException;
+import com.marklogic.client.eval.EvalResult;
+import com.marklogic.client.eval.EvalResultIterator;
+import com.marklogic.client.eval.ServerEvaluationCall;
+import com.marklogic.client.io.JacksonHandle;
+import com.marklogic.client.io.marker.JSONReadHandle;
 import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
@@ -15,7 +24,6 @@ import drugDetails.drugDetailsViewController;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -27,8 +35,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TreeTableView;
 import javafx.stage.Stage;
+import org.apache.jena.graph.Node;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.ontology.OntModel;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
@@ -39,23 +51,22 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.InfModel;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Property;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.reasoner.ReasonerRegistry;
 import org.apache.jena.reasoner.rulesys.GenericRuleReasoner;
-import org.apache.jena.reasoner.rulesys.GenericRuleReasonerFactory;
 import org.apache.jena.reasoner.rulesys.Rule;
 import org.apache.jena.util.FileManager;
-import org.apache.jena.vocabulary.ReasonerVocabulary;
 import org.apache.log4j.Logger;
+import org.mindswap.pellet.jena.ModelExtractor;
+import org.mindswap.pellet.jena.PelletReasonerFactory;
+import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyManager;
 import searchDrug.SearchDrugTableEntry;
 import util.PopUps;
 import util.QueryUtils;
 import util.Redirecter;
+
 
 /**
  * FXML Controller class
@@ -83,59 +94,62 @@ public class EHRViewController implements Initializable {
    @FXML
    private TableView<DiseaseTableEntry> tbvPastDiseases;
    @FXML
-   private TableView<SearchDrugTableEntry> tbvDrugs;
+   private TableView<SearchDrugTableEntry> tbvRecommendedDrugs;
+   @FXML
+   private TableView<SearchDrugTableEntry> tbvAssumedDrugs;
 
    private ObservableList<DiseaseTableEntry> alList;
    private ObservableList<DiseaseTableEntry> cDisList;
    private ObservableList<DiseaseTableEntry> pDisList;
    private ObservableList<ExaminationTableEntry> examList;
-   private ObservableList<SearchDrugTableEntry> drugsList;
+   private ObservableList<SearchDrugTableEntry> recommendedDrugsList;
+   private ObservableList<SearchDrugTableEntry> assumedDrugsList;
    private MarkLogicDatasetGraph mldg;
+   private String personURI;
 
    
-   private void reasoning(){
-       String inputFileName = "C:\\Users\\Mattia\\Desktop\\myOntology.owl";  
-        Model model = FileManager.get().loadModel(inputFileName);
-   LOGGER.debug("ci siamo");
+   private void reasoningRecommendedDrugs(){
+       //String inputFileName = "C:\\Users\\Mattia\\Desktop\\myOntology.owl";  
+       // Model model = FileManager.get().loadModel(inputFileName);
+       Model model = ModelFactory.createModelForGraph(this.mldg.getGraph(Node.ANY));
+  
+       //Dataset dataset = this.mldg.toDataset();
+       LOGGER.debug("minne "+ model.size());
+       //this.mldg.setRulesets(SPARQLRuleset.ruleset("C:\\Program Files\\MarkLogic\\Config\\recommendedDrug.rules"));
             //Setting up rules
-          String rule = "[rule1:(?d1 http://www.clinicaldb.org#clinicaldata_HasTherapy ?f)  " +
-                        "(?d2 http://www.clinicaldb.org#clinicaldata_HasTherapy ?f)" +
-                  "(?p http://www.clinicaldb.org/clinicaldata_SuffersFrom ?d1)" +
-                  "(?p http://www.clinicaldb.org/clinicaldata_SuffersFrom ?d2)" +
-                      "->(?p http://www.clinicaldb.org#clinicaldata_RecommendedDrug ?f)]";
-        LOGGER.debug("dopo regola");   
+          String rule = "[rule1:(?a http://www.clinicaldb.org/clinicaldata_SuffersFrom ?b)  " +
+                        "(?b http://www.clinicaldb.org/clinicaldata_HasTherapy ?c)" +
+                      "->(?a http://www.clinicaldb.org/clinicaldata_RecommendedDrug ?c)]";
+
           //query String
-          String queryString = "PREFIX cdata:<http://www.clinicaldb.org#clinicaldata_>" +
+          String queryString = "PREFIX cdata:<http://www.clinicaldb.org/>" +
         "SELECT *"  +
-        "WHERE {?x cdata:RecommendedDrug ?z}";
- LOGGER.debug("dopo la query");
+        "WHERE {?x <http://www.clinicaldb.org/clinicaldata_RecommendedDrug> ?z}";
+
         //set up reasoner
         Reasoner reasoner = new GenericRuleReasoner(Rule.parseRules(rule));
- LOGGER.debug("dopo reasoner");
-        InfModel inf = ModelFactory.createInfModel(reasoner, model);
- LOGGER.debug("dopo inf model");
-        Query query = QueryFactory.create(queryString);
-        QueryExecution qe = QueryExecutionFactory.create(query, this.mldg.toDataset());
-        ResultSet results = qe.execSelect();
-LOGGER.debug("dopo esecuzione query");
 
-        while (results.hasNext()) {
-                    QuerySolution sol = results.next();
-                    LOGGER.debug(" ");
-                    LOGGER.debug(sol.getResource("x").getLocalName());
-                     LOGGER.debug("    ");
-                    LOGGER.debug(sol.getResource("y").getLocalName());
-                     LOGGER.debug("    ");
-                     LOGGER.debug(sol.getResource("z").getLocalName());
+        InfModel inf = ModelFactory.createInfModel(reasoner, model);
+
+        Query query = QueryFactory.create(queryString);
+        QueryExecution qe = QueryExecutionFactory.create(query, inf);
+        ResultSet results = qe.execSelect();
+
+        for ( ; results.hasNext() ; ) {
+            QuerySolution soln = results.nextSolution() ;
+            System.out.println("minne ");
+            System.out.print("minne "+soln.getResource("x").getURI());
+            System.out.print("minne    ");
+            System.out.println("minne "+soln.getResource("z").getURI());
         }
-       
-LOGGER.debug("dopo risultato query");
+
 
         /*output result*/
-        //ResultSetFormatter.out(System.out, results, query);
+        //ResultSetFormatter.out(System.out, results, recommendedDrugsQuery);
         qe.close(); 
-        LOGGER.debug("dopo chiusura query");
+       
    }
+  
    /**
     * *
     * Initializes the controller class.
@@ -152,7 +166,8 @@ LOGGER.debug("dopo risultato query");
       this.cDisList = FXCollections.observableArrayList();
       this.pDisList = FXCollections.observableArrayList();
       this.examList = FXCollections.observableArrayList();
-      this.drugsList = FXCollections.observableArrayList();
+      this.recommendedDrugsList = FXCollections.observableArrayList();
+      this.assumedDrugsList = FXCollections.observableArrayList();
 
       this.setCols("Allergie", this.alList, this.tbvAllergy);
       this.setCols("Malattie Passate", this.pDisList, this.tbvPastDiseases);
@@ -160,6 +175,7 @@ LOGGER.debug("dopo risultato query");
       this.setDrugsCols();
       this.setExamCols();
 
+      
       //set double click event on table row
       this.setDoubleClickHandler(this.tbvAllergy);
       this.setDoubleClickHandler(this.tbvCurrentDiseases);
@@ -167,9 +183,6 @@ LOGGER.debug("dopo risultato query");
       this.setDrugDoubleClickHandler();
       this.setExaminationDoubleClickHandler();
        
-       
-       reasoning();
-       LOGGER.debug("dopo tutto");
    }
 
    /**
@@ -239,7 +252,36 @@ LOGGER.debug("dopo risultato query");
    }
 
    private void setDrugDoubleClickHandler(){
-       this.tbvDrugs.setRowFactory(tr -> {
+       this.tbvRecommendedDrugs.setRowFactory(tr -> {
+           TableRow<SearchDrugTableEntry> row = new TableRow<>();
+           row.setOnMouseClicked(event -> {
+               if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                   String drugName = row.getItem().getName();
+                   String drugCod = row.getItem().getCod();
+                   LOGGER.debug(drugName);
+                   LOGGER.debug(drugCod);
+                   //load disease detail window
+                   try {
+                       FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DRUG_DET_WIN));
+                       Parent view = (Parent) loader.load();
+                       //set the drug in the new window controller
+                       loader.<drugDetailsViewController>getController().setDrugAndInit(drugCod, drugName);
+                       
+                       Scene scene = new Scene(view);
+                       Stage newStage = new Stage();
+                       newStage.setScene(scene);
+                       newStage.setTitle(drugName);
+                       newStage.show();
+                   } catch (IOException exc) {
+                       PopUps.showError("Errore", "Impossibile caricare la pagina");
+                       LOGGER.error(exc.getMessage());
+                   }
+               }
+           });
+           return row;
+       });
+       
+       this.tbvAssumedDrugs.setRowFactory(tr -> {
            TableRow<SearchDrugTableEntry> row = new TableRow<>();
            row.setOnMouseClicked(event -> {
                if (event.getClickCount() == 2 && (!row.isEmpty())) {
@@ -318,17 +360,68 @@ LOGGER.debug("dopo risultato query");
    public void setPersonAndInit(String personUri) {
       LOGGER.debug("param: " + personUri);
       this.setBaseData(personUri);
-
+      this.personURI = personUri;
       String query = QueryUtils.loadQueryFromFile("getPersonAllergies.txt");
       this.setTableData(personUri, this.alList, query);
       query = QueryUtils.loadQueryFromFile("getPersonCurrentDiseases.txt");
       this.setTableData(personUri, this.cDisList, query);
       query = QueryUtils.loadQueryFromFile("getPersonPastDiseases.txt");
       this.setTableData(personUri, this.pDisList, query);
-      query = QueryUtils.loadQueryFromFile("getPersonDrugs.txt");
-//      this.setTableData(personUri, this.drugsList, query);
       query = QueryUtils.loadQueryFromFile("getPersonExaminations.txt");
       this.setExaminationsTableData(personUri, query);
+      
+     this.reasoning();
+   }
+   
+   private void reasoning(){
+        
+       DatabaseClient client = DatabaseClientFactory.newClient("localhost",8000,new DigestAuthContext("moriani", "andresilva"));
+       ServerEvaluationCall theCallForRecommendedDrugs = client.newServerEval();
+       ServerEvaluationCall theCallForAssumedDrugs = client.newServerEval();
+        String recommendedDrugsQuery = "let $my-store := sem:ruleset-store(\"/rules/myRules.rules\", sem:store() )\n" +
+                        "return\n" +
+                        " sem:sparql('\n" +
+                        "prefix cdata: <http://www.clinicaldb.org/clinicaldata_>\n" +
+                        "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                        "select *\n" +
+                        "where{\n" +
+                        "  <"+personURI+"> cdata:RecommendedDrug ?drugCod . \n" +
+                        "  ?drugCod rdfs:label ?drugName\n" +
+                        "}\n" +
+                        "', (), (),\n" +
+                        " $my-store\n" +
+                        " )";
+        
+         String assumedDrugsQuery = "let $my-store := sem:ruleset-store(\"/rules/myRules.rules\", sem:store() )\n" +
+                                    "return\n" +
+                                    " sem:sparql('\n" +
+                                    "prefix cdata: <http://www.clinicaldb.org/clinicaldata_>\n" +
+                                    "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                                    "select *\n" +
+                                    "where{\n" +
+                                    "  <"+personURI+"> cdata:TakesMedication ?drugCod . \n" +
+                                    "  ?drugCod rdfs:label ?drugName\n" +
+                                    "}\n" +
+                                    "', (), (),\n" +
+                                    " $my-store\n" +
+                                    " )";
+         
+        theCallForRecommendedDrugs.xquery(recommendedDrugsQuery);
+        EvalResultIterator recommendedDrugsResult = theCallForRecommendedDrugs.eval();
+        while (recommendedDrugsResult.hasNext()) {
+            EvalResult sol = recommendedDrugsResult.next();
+            JacksonHandle handle = sol.get(new JacksonHandle());
+            this.recommendedDrugsList.add(new SearchDrugTableEntry(handle.get().get("drugCod").asText(), handle.get().get("drugName").asText()));
+         }
+        
+        
+         theCallForAssumedDrugs.xquery(assumedDrugsQuery);
+        EvalResultIterator assumedDrugsResult = theCallForAssumedDrugs.eval();
+        while (assumedDrugsResult.hasNext()) {
+            EvalResult sol = assumedDrugsResult.next();
+            JacksonHandle handle = sol.get(new JacksonHandle());
+            this.assumedDrugsList.add(new SearchDrugTableEntry(handle.get().get("drugCod").asText(), handle.get().get("drugName").asText()));
+         }
    }
 
    /**
@@ -344,6 +437,7 @@ LOGGER.debug("dopo risultato query");
       query.setCommandText(queryStr);
       query.setIri("puri", pUri);
 
+      
       try (QueryExecution execution = QueryExecutionFactory.create(query.asQuery(), this.mldg.toDataset())) {
          ResultSet res = execution.execSelect();
          if (res.hasNext()) {
@@ -396,7 +490,7 @@ LOGGER.debug("dopo risultato query");
 
    /***
     * Load the person examinations.
-    * @param queryStr query to execute
+    * @param queryStr recommendedDrugsQuery to execute
     */
    private void setExaminationsTableData(final String pUri, final String queryStr) {
       ParameterizedSparqlString query = new ParameterizedSparqlString();
@@ -419,16 +513,28 @@ LOGGER.debug("dopo risultato query");
    }
    
    private void setDrugsCols(){
-       TableColumn<SearchDrugTableEntry, String> nameCol = new TableColumn("Farmaci Consigliati");
-      nameCol.setCellValueFactory(cellData -> {
+       TableColumn<SearchDrugTableEntry, String> recDrugsCol = new TableColumn("Farmaci Consigliati");
+      recDrugsCol.setCellValueFactory(cellData -> {
          return cellData.getValue().nameProperty();
       });
       
       
-      this.tbvDrugs.getColumns().addAll(
-              nameCol
+      this.tbvRecommendedDrugs.getColumns().addAll(
+              recDrugsCol
       );
-      this.tbvDrugs.setItems(this.drugsList);
+      this.tbvRecommendedDrugs.setItems(this.recommendedDrugsList);
+      
+      
+      TableColumn<SearchDrugTableEntry, String> assDrugsCol = new TableColumn("Farmaci Assunti");
+      assDrugsCol.setCellValueFactory(cellData -> {
+         return cellData.getValue().nameProperty();
+      });
+      
+      
+      this.tbvAssumedDrugs.getColumns().addAll(
+              assDrugsCol
+      );
+      this.tbvAssumedDrugs.setItems(this.assumedDrugsList);
    }
 
 }

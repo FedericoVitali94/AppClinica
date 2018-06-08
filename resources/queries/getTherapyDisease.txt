@@ -1,15 +1,10 @@
 prefix cdata1: <http://www.clinicaldb.org/clinicaldata_>
-prefix cdata2: <http://www.clinicaldb.org#clinicaldata_>
 prefix foaf: <http://xmlns.com/foaf/0.1/>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 select ?drugUri ?drugName
 where {
   {
     ?dis cdata1:HasTherapy ?drugUri .
-   ?drugUri rdfs:label ?drugName
-  }
-  UNION{
-    ?dis cdata2:HasTherapy ?drugUri .
    ?drugUri rdfs:label ?drugName
   }
 }

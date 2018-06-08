@@ -1,16 +1,10 @@
-prefix cdata1: <http://www.clinicaldb.org#clinicaldata_>
-prefix cdata2: <http://www.clinicaldb.org/clinicaldata_>
+prefix cdata: <http://www.clinicaldb.org/clinicaldata_>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 select ?examUri ?examName
 where {
   {
-   ?dis cdata1:hasMedicalTest ?examUri .
-   ?examUri rdfs:label ?examName
-  }
-UNION
-  {
-   ?dis cdata2:hasMedicalTest ?examUri .
+   ?dis cdata:hasMedicalTest ?examUri .
    ?examUri rdfs:label ?examName
   }
 }

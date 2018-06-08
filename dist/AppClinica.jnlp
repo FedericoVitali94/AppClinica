@@ -8,7 +8,7 @@
   </information>
   <resources>
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
-    <jar href="AppClinica.jar" size="86889" download="eager" />
+    <jar href="AppClinica.jar" size="89718" download="eager" />
     <jar href="lib\asm-5.0.3.jar" size="53231" download="eager" />
     <jar href="lib\asm-analysis-5.0.3.jar" size="20443" download="eager" />
     <jar href="lib\asm-tree-5.0.3.jar" size="29036" download="eager" />
@@ -34,6 +34,7 @@
     <jar href="lib\jackson-databind-2.7.4.jar" size="1204187" download="eager" />
     <jar href="lib\jackson-databind-2.8.3.jar" size="1233703" download="eager" />
     <jar href="lib\jcl-over-slf4j-1.7.21.jar" size="16431" download="eager" />
+    <jar href="lib\jena-2.5.5.jar" size="2215979" download="eager" />
     <jar href="lib\jena-arq-3.3.0.jar" size="2885392" download="eager" />
     <jar href="lib\jena-base-3.3.0.jar" size="217914" download="eager" />
     <jar href="lib\jena-cmds-3.3.0.jar" size="238623" download="eager" />
@@ -53,6 +54,7 @@
     <jar href="lib\marklogic-jena-3.0.3.jar" size="34400" download="eager" />
     <jar href="lib\mimepull-1.6.jar" size="39112" download="eager" />
     <jar href="lib\mimepull-1.9.4.jar" size="63134" download="eager" />
+    <jar href="lib\owlapi-osgidistribution-4.1.0.jar" size="13888309" download="eager" />
     <jar href="lib\parboiled-core-1.1.7.jar" size="186607" download="eager" />
     <jar href="lib\parboiled-java-1.1.7.jar" size="73350" download="eager" />
     <jar href="lib\pegdown-1.6.0.jar" size="80022" download="eager" />
