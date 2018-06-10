@@ -5,9 +5,8 @@
 
 <AnchorPane id="AnchorPane" prefHeight="241.0" prefWidth="335.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="appclinica.MainMenuViewController">
    <children>
-      <Button fx:id="butSearchPerson" layoutX="78.0" layoutY="46.0" mnemonicParsing="false" onAction="#handleSearchPerson" prefHeight="25.0" prefWidth="164.0" text="Ricerca Persone" />
-      <Button fx:id="butSearchDisease" layoutX="78.0" layoutY="88.0" mnemonicParsing="false" onAction="#handleSearchDisease" prefHeight="25.0" prefWidth="164.0" text="Ricerca per Sintomo" />
-      <Button fx:id="butSearchDrug" layoutX="78.0" layoutY="130.0" mnemonicParsing="false" onAction="#handleSearchDrug" prefHeight="25.0" prefWidth="164.0" text="Ricerca Farmaco" />
-      <Button fx:id="butDiagnosis" layoutX="78.0" layoutY="170.0" mnemonicParsing="false" onAction="#handleArtificialDiagnosis" prefHeight="25.0" prefWidth="164.0" text="Artificial Diagnosis" />
+      <Button fx:id="butSearchPerson" layoutX="86.0" layoutY="67.0" mnemonicParsing="false" onAction="#handleSearchPerson" prefHeight="25.0" prefWidth="164.0" text="Ricerca Persone" />
+      <Button fx:id="butSearchDrug" layoutX="86.0" layoutY="109.0" mnemonicParsing="false" onAction="#handleSearchDrug" prefHeight="25.0" prefWidth="164.0" text="Ricerca Farmaco" />
+      <Button fx:id="butDiagnosis" layoutX="86.0" layoutY="149.0" mnemonicParsing="false" onAction="#handleArtificialDiagnosis" prefHeight="25.0" prefWidth="164.0" text="Artificial Diagnosis" />
    </children>
 </AnchorPane>

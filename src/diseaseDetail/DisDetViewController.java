@@ -10,8 +10,10 @@ import com.marklogic.client.semantics.SPARQLRuleset;
 import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
 import drugDetails.drugDetailsViewController;
-import ehr.ExaminationTableEntry;
-import ehr.ExaminationViewController;
+import examDetails.ExamInfoTableEntry;
+import examDetails.ExaminationInfoViewController;
+import examDetails.ExaminationTableEntry;
+import examDetails.ExaminationViewController;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -60,12 +62,12 @@ public class DisDetViewController implements Initializable {
    private TableView<SearchDrugTableEntry> tbvTherapies;
    
    @FXML
-   private TableView<ExaminationTableEntry> tbvExams;
+   private TableView<ExamInfoTableEntry> tbvExams;
 
    private ObservableList<SimpleStringProperty> olIsA;
    private ObservableList<SimpleStringProperty> olSympt;
    private ObservableList<SearchDrugTableEntry> olTherapies;
-   private ObservableList<ExaminationTableEntry> olExams;
+   private ObservableList<ExamInfoTableEntry> olExams;
    private MarkLogicDatasetGraph mldg;
    private String disUri;
 
@@ -118,7 +120,7 @@ public class DisDetViewController implements Initializable {
    }
    
    private void setExamsTableCol(){
-       TableColumn<ExaminationTableEntry, String> col = new TableColumn("Esami di controllo");
+       TableColumn<ExamInfoTableEntry, String> col = new TableColumn("Esami di controllo");
        col.setCellValueFactory(new PropertyValueFactory<>("name"));
        this.tbvExams.getColumns().add(col);
        this.tbvExams.setItems(this.olExams);
@@ -224,24 +226,14 @@ public class DisDetViewController implements Initializable {
       }
    }
    
-   private void setExamsData(final String disUri, ObservableList<ExaminationTableEntry> olExams){
-       String query = "prefix cdata1: <http://www.clinicaldb.org#clinicaldata_>\n" +
-                        "prefix cdata2: <http://www.clinicaldb.org/clinicaldata_>\n" +
-                        "PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n" +
+   private void setExamsData(final String disUri, ObservableList<ExamInfoTableEntry> olExams){
+       String query = "prefix cdata: <http://www.clinicaldb.org/clinicaldata_>\n" +
                         "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
-                        "select ?examUri ?examName ?examDate ?examFile\n" +
-                        "where {\n" +
+                        "select ?examUri ?examName\n" +
+                        "where \n" +
                         "  {\n" +
-                        "<"+disUri+"> cdata1:hasMedicalTest ?examUri .\n" +
-                        "   ?examUri rdfs:label ?examName .\n" +
-                        "   ?examUri cdata1:HasDate ?examDate . \n" +
-                        "   ?examUri cdata1:HasFile ?examFile}\n" +
-                        "UNION\n" +
-                        "  {\n" +
-                        "<"+disUri+"> cdata2:hasMedicalTest ?examUri .\n" +
-                        "   ?examUri rdfs:label ?examName .\n" +
-                        "  ?examUri cdata2:HasDate ?examDate . \n" +
-                        "   ?examUri cdata2:HasFile ?examFile}\n" +
+                        "<"+disUri+"> cdata:hasMedicalTest ?examUri .\n" +
+                        "   ?examUri rdfs:label ?examName \n" +
                         "}";
        this.mldg.setRulesets(SPARQLRuleset.SUBCLASS_OF);
       try (QueryExecution execution = QueryExecutionFactory.create(query, this.mldg.toDataset())) {
@@ -250,10 +242,7 @@ public class DisDetViewController implements Initializable {
             QuerySolution sol = res.next();
             String examName = sol.getLiteral("examName").getString();
             String examCod = sol.getResource("examUri").getURI();
-            String examFile = sol.getResource("examFile").getURI();
-            String examDate = sol.getLiteral("examDate").getString();
-            olExams.add(new ExaminationTableEntry(examName, examDate, examFile));
-            LOGGER.debug(examName);
+            olExams.add(new ExamInfoTableEntry(examCod, examName));
          }
       } catch (MarkLogicServerException exc) {
          PopUps.showError("Errore", "Errore del server durante il caricamento degli esami");
@@ -298,15 +287,14 @@ public class DisDetViewController implements Initializable {
    
    private void setExamsDoubleClickHandler(){
         this.tbvExams.setRowFactory(tr -> {
-         TableRow<ExaminationTableEntry> row = new TableRow<>();
+         TableRow<ExamInfoTableEntry> row = new TableRow<>();
          row.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2 && (!row.isEmpty())) {
-               String imgUri = row.getItem().getUri();
                //load examination detail window
                try {
-                  FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.EXAM_DET_WIN));
+                  FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.EXAM_INFO_WIN));
                   Parent view = (Parent) loader.load();
-                  loader.<ExaminationViewController>getController().setImg(imgUri);
+                  loader.<ExaminationInfoViewController>getController().setExamAndInit(row.getItem().getCod(), row.getItem().getName());
 
                   Scene scene = new Scene(view);
                   Stage newStage = new Stage();

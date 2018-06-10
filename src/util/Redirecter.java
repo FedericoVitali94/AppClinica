@@ -27,7 +27,8 @@ public class Redirecter {
    public final static String EHR_WIN = "ehr/EHRView.fxml";
    public final static String DISEASE_DET_WIN = "diseaseDetail/DisDetView.fxml";
    public final static String DRUG_DET_WIN = "drugDetails/drugDetailsView.fxml";
-   public final static String EXAM_DET_WIN = "ehr/ExaminationView.fxml";
+   public final static String EXAM_DET_WIN = "examDetails/ExaminationView.fxml";
+   public final static String EXAM_INFO_WIN = "examDetails/ExaminationInfoView.fxml";
    public final static String MAIN_MENU_WIN = "appclinica/MainMenuView.fxml";
    public final static String DIAGNOSIS_WIN = "recommendedSympExams/ArtificialDiagnosisView.fxml";
 

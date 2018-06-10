@@ -5,7 +5,7 @@
  */
 package ehr;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import examDetails.ExaminationTableEntry;
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.DatabaseClientFactory;
 import com.marklogic.client.DatabaseClientFactory.DigestAuthContext;
@@ -21,6 +21,7 @@ import com.marklogic.semantics.jena.MarkLogicDatasetGraph;
 import db.ServerConnectionManager;
 import diseaseDetail.DiseaseTableEntry;
 import drugDetails.drugDetailsViewController;
+import examDetails.ExaminationViewController;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -57,11 +58,6 @@ import org.apache.jena.reasoner.rulesys.GenericRuleReasoner;
 import org.apache.jena.reasoner.rulesys.Rule;
 import org.apache.jena.util.FileManager;
 import org.apache.log4j.Logger;
-import org.mindswap.pellet.jena.ModelExtractor;
-import org.mindswap.pellet.jena.PelletReasonerFactory;
-import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLOntologyManager;
 import searchDrug.SearchDrugTableEntry;
 import util.PopUps;
 import util.QueryUtils;
@@ -235,8 +231,8 @@ public class EHRViewController implements Initializable {
                try {
                   FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.EXAM_DET_WIN));
                   Parent view = (Parent) loader.load();
-                  loader.<ExaminationViewController>getController().setImg(imgUri);
-
+                  loader.<ExaminationViewController>getController().setExamAndInit(row.getItem().getName(), row.getItem().getDate(), row.getItem().getUri());
+                  
                   Scene scene = new Scene(view);
                   Stage newStage = new Stage();
                   newStage.setScene(scene);
@@ -265,7 +261,7 @@ public class EHRViewController implements Initializable {
                        FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DRUG_DET_WIN));
                        Parent view = (Parent) loader.load();
                        //set the drug in the new window controller
-                       loader.<drugDetailsViewController>getController().setDrugAndInit(drugCod, drugName);
+                       loader.<drugDetailsViewController>getController().setDrugAndInit(drugCod.substring(drugCod.length() - 8, drugCod.length()), drugName);
                        
                        Scene scene = new Scene(view);
                        Stage newStage = new Stage();
@@ -294,7 +290,7 @@ public class EHRViewController implements Initializable {
                        FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource(Redirecter.DRUG_DET_WIN));
                        Parent view = (Parent) loader.load();
                        //set the drug in the new window controller
-                       loader.<drugDetailsViewController>getController().setDrugAndInit(drugCod, drugName);
+                       loader.<drugDetailsViewController>getController().setDrugAndInit(drugCod.substring(drugCod.length() - 8, drugCod.length()), drugName);
                        
                        Scene scene = new Scene(view);
                        Stage newStage = new Stage();

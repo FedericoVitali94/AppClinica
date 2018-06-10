@@ -6,84 +6,85 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane id="AnchorPane" prefHeight="572.0" prefWidth="929.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ehr.EHRViewController">
+<AnchorPane id="AnchorPane" prefHeight="558.0" prefWidth="794.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ehr.EHRViewController">
    <children>
-      <Label layoutX="190.0" layoutY="41.0" text="Blood Type:">
+      <Label layoutX="15.0" layoutY="111.0" text="Blood Type:">
          <font>
-            <Font size="18.0" />
+            <Font size="14.0" />
          </font></Label>
-      <TableView fx:id="tbvAllergy" layoutX="700.0" layoutY="311.0" prefHeight="247.0" prefWidth="208.0">
+      <TableView fx:id="tbvAllergy" layoutX="15.0" layoutY="381.0" prefHeight="161.0" prefWidth="220.0">
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <TableView fx:id="tbvPastDiseases" layoutX="15.0" layoutY="311.0" prefHeight="247.0" prefWidth="350.0">
+      <TableView fx:id="tbvPastDiseases" layoutX="246.0" layoutY="297.0" prefHeight="247.0" prefWidth="258.0">
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <TableView fx:id="tbvCurrentDiseases" layoutX="15.0" layoutY="78.0" prefHeight="224.0" prefWidth="350.0">
+      <TableView fx:id="tbvCurrentDiseases" layoutX="246.0" layoutY="21.0" prefHeight="267.0" prefWidth="258.0">
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <Label fx:id="labName" layoutX="87.0" layoutY="14.0" prefHeight="17.0" prefWidth="150.0">
+      <Label fx:id="labName" layoutX="62.0" layoutY="26.0" prefHeight="20.0" prefWidth="175.0">
          <effect>
             <Blend />
          </effect>
          <font>
-            <Font name="System Bold" size="18.0" />
+            <Font name="System Bold" size="14.0" />
          </font></Label>
-      <Label fx:id="labSurname" layoutX="340.0" layoutY="14.0" prefHeight="27.0" prefWidth="187.0">
+      <Label fx:id="labAge" layoutX="49.0" layoutY="83.0" prefHeight="17.0" prefWidth="48.0">
          <effect>
             <Blend />
          </effect>
          <font>
-            <Font name="System Bold" size="18.0" />
+            <Font size="14.0" />
          </font></Label>
-      <Label fx:id="labAge" alignment="CENTER" layoutX="71.0" layoutY="41.0" prefHeight="17.0" prefWidth="48.0">
+      <Label fx:id="labBloodType" layoutX="99.0" layoutY="111.0" prefHeight="17.0" prefWidth="40.0">
          <effect>
             <Blend />
          </effect>
          <font>
-            <Font name="System Bold" size="18.0" />
+            <Font size="14.0" />
          </font></Label>
-      <Label fx:id="labBloodType" layoutX="290.0" layoutY="41.0" prefHeight="17.0" prefWidth="40.0">
-         <effect>
-            <Blend />
-         </effect>
-         <font>
-            <Font name="System Bold" size="18.0" />
-         </font></Label>
-      <TableView fx:id="tbvExamns" layoutX="700.0" layoutY="78.0" prefHeight="224.0" prefWidth="208.0">
+      <TableView fx:id="tbvExamns" layoutX="15.0" layoutY="149.0" prefHeight="224.0" prefWidth="220.0">
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <TableView fx:id="tbvRecommendedDrugs" layoutX="372.0" layoutY="78.0" prefHeight="224.0" prefWidth="320.0">
+      <TableView fx:id="tbvRecommendedDrugs" layoutX="511.0" layoutY="21.0" prefHeight="267.0" prefWidth="269.0">
           <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
-      <Label layoutX="25.0" layoutY="41.0" text="Age:">
+      <Label layoutX="15.0" layoutY="83.0" text="Age:">
          <font>
-            <Font size="18.0" />
+            <Font size="14.0" />
          </font>
       </Label>
-      <Label layoutX="25.0" layoutY="14.0" text="Name:">
+      <Label layoutX="15.0" layoutY="26.0" text="Name:">
          <font>
-            <Font size="18.0" />
+            <Font size="14.0" />
          </font>
       </Label>
-      <Label layoutX="255.0" layoutY="14.0" text="Surname:">
+      <Label layoutX="14.0" layoutY="53.0" text="Surname:">
          <font>
-            <Font size="18.0" />
+            <Font size="14.0" />
          </font>
       </Label>
-      <TableView fx:id="tbvAssumedDrugs" layoutX="372.0" layoutY="311.0" prefHeight="247.0" prefWidth="320.0" >
+      <TableView fx:id="tbvAssumedDrugs" layoutX="511.0" layoutY="297.0" prefHeight="247.0" prefWidth="269.0">
           <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
       </TableView>
+      <Label fx:id="labSurname" layoutX="77.0" layoutY="53.0" prefHeight="20.0" prefWidth="164.0">
+         <effect>
+            <Blend />
+         </effect>
+         <font>
+            <Font name="System Bold" size="14.0" />
+         </font>
+      </Label>
    </children>
 </AnchorPane>

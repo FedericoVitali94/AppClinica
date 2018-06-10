@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package recommendedSympExams;
+package examDetails;
 
 import javafx.beans.property.SimpleStringProperty;
 
@@ -11,23 +11,15 @@ import javafx.beans.property.SimpleStringProperty;
  *
  * @author Mattia
  */
-public class ExaminationResultEntry {
-     private final SimpleStringProperty name;
-     private final SimpleStringProperty cod;
+public class ExamInfoTableEntry {
+    private final SimpleStringProperty name;
+   private final SimpleStringProperty cod;
    
-   public ExaminationResultEntry(final String cod, final String name) {
-      this.name = new SimpleStringProperty(name);
-      this.cod = new SimpleStringProperty(cod);
+   public ExamInfoTableEntry(final String examCod, final String examName){
+      this.name = new SimpleStringProperty(examName);
+      this.cod = new SimpleStringProperty(examCod);
    }
    
-   
-   /***
-    * 
-    * @return cod
-    */
-   public String getCod() {
-      return this.cod.get();
-   }
    /***
     * 
     * @return name
@@ -38,11 +30,12 @@ public class ExaminationResultEntry {
    
    /***
     * 
-    * @return cod property
+    * @return cod
     */
-   public SimpleStringProperty codProperty() {
-      return this.cod;
+   public String getCod() {
+      return this.cod.get();
    }
+   
    /***
     * 
     * @return name property
@@ -51,4 +44,11 @@ public class ExaminationResultEntry {
       return this.name;
    }
    
+   /***
+    * 
+    * @return cod property
+    */
+   public SimpleStringProperty codProperty() {
+      return this.cod;
+   }
 }

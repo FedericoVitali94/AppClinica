@@ -21,18 +21,12 @@ import util.Redirecter;
 public class MainMenuViewController implements Initializable {
 
    @FXML
-   private Button butSearchDisease;
-   @FXML
    private Button butSearchPerson;
    @FXML
    private Button butSearchDrug;
    @FXML
    private Button butDiagnosis;
 
-   @FXML
-   private void handleSearchDisease(ActionEvent event) {
-      Redirecter.getInstance().redirect(this.butSearchDisease.getScene(), Redirecter.SEARCH_DISEASE_WIN, true);
-   }
 
    @FXML
    private void handleSearchPerson(ActionEvent event) {

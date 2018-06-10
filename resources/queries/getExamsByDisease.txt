@@ -1,0 +1,9 @@
+prefix cdata: <http://www.clinicaldb.org/clinicaldata_>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+select *
+where
+{
+  ?disUri cdata:hasMedicalTest ?examCod . 
+  ?examCod rdfs:label ?examName
+}

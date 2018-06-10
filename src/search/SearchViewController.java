@@ -34,6 +34,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.jena.query.ParameterizedSparqlString;
@@ -76,7 +77,7 @@ public class SearchViewController implements Initializable {
    @FXML
    private TextField tfName;
    @FXML
-   private VBox vboxBloodType;
+   private HBox vboxBloodType;
 
    private MarkLogicDatasetGraph mldg;
    private ObservableList<SearchTableEntry> searchResults;
